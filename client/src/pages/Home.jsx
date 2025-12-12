@@ -10,7 +10,6 @@ function Home() {
       <Hero />
       <Features />
       <HowItWorks />
-      <CallToAction />
       <Footer />
     </div>
   );

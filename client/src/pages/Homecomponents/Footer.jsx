@@ -1,95 +1,345 @@
-import { Building2, Mail, MapPin, Phone } from 'lucide-react';
+// src/components/Footer.jsx
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Youtube,
+  Mail,
+  Phone,
+  MapPin,
+  ChevronUp,
+  ChevronRight,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+/**
+ * Footer.jsx — solid background version
+ *
+ * - Gradient removed per request: footer now uses a solid background color
+ *   that matches the navbar (teal-600) for consistent visual identity.
+ * - Decorative accents retained (soft white overlays) but no background
+ *   gradient on the root element.
+ * - All other functionality (newsletter, links, responsiveness, back-to-top)
+ *   preserved.
+ *
+ * Requires Tailwind CSS + lucide-react + react-router-dom Link.
+ */
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState(null); // null | "ok" | "error"
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (status === "ok") {
+      const t = setTimeout(() => {
+        setStatus(null);
+        setEmail("");
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [status]);
+
+  function handleSubscribe(e) {
+    e.preventDefault();
+    if (submitting) return;
+    setStatus(null);
+
+    const mailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!mailRe.test(email.trim())) {
+      setStatus("error");
+      return;
+    }
+
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setStatus("ok");
+    }, 800);
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="container mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-6">
-              <Building2 className="w-8 h-8 text-blue-500" />
-              <span className="text-2xl font-bold text-white">StaffHub</span>
+    <footer className="relative overflow-hidden bg-teal-600 text-white pt-20 sm:pt-24 lg:pt-28 pb-10 lg:pb-16">
+      {/* Decorative background accents (soft, subtle; kept pointer-events-none) */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        {/* left soft ellipse */}
+        <svg className="absolute left-[-10%] top-[-18%] w-[680px] h-[680px] opacity-10 blur-3xl hidden lg:block" viewBox="0 0 400 400" aria-hidden>
+          <defs>
+            <linearGradient id="f_bg_left_nav" x1="0" x2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#0ea5a4" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="200" cy="200" rx="200" ry="150" fill="url(#f_bg_left_nav)" />
+        </svg>
+
+        {/* right rounded rect */}
+        <svg className="absolute right-[-6%] bottom-[-12%] w-[620px] h-[620px] opacity-8 blur-2xl hidden lg:block" viewBox="0 0 400 400" aria-hidden>
+          <defs>
+            <linearGradient id="f_bg_right_nav" x1="0" x2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.04" />
+              <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="400" height="400" rx="110" fill="url(#f_bg_right_nav)" />
+        </svg>
+
+        {/* small morph blob */}
+        <div className="hidden lg:block absolute right-[-3%] top-8 w-[380px] h-[260px] opacity-9" aria-hidden>
+          <svg viewBox="0 0 420 300" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="f_morph_nav" x1="0" x2="1">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.06" />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0 120 C80 40,160 20,240 60 C320 100,360 80,420 120 L420 300 L0 300 Z"
+              fill="url(#f_morph_nav)"
+              opacity="0.08"
+              style={{ animation: "footerFloatNav 7000ms ease-in-out infinite" }}
+            />
+          </svg>
+        </div>
+      </div>
+
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+          {/* Branding + newsletter */}
+          <div className="lg:col-span-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-full bg-white/10 p-2 backdrop-blur-sm shadow-sm">
+                <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden className="text-white">
+                  <defs>
+                    <linearGradient id="logo_grad_nav" x1="0" x2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.85" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="24" height="24" rx="6" fill="url(#logo_grad_nav)" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">StaffHub</div>
+                <div className="text-sm text-slate-100/80">Workforce made simple</div>
+              </div>
             </div>
-            <p className="text-gray-400 leading-relaxed mb-6">
-              Complete staffing management solution for modern businesses. Streamline attendance, payroll, and workforce operations.
+
+            <p className="text-slate-100/90 mb-5 max-w-[36rem]">
+              Trusted attendance, payroll and analytics tools for institutions and small businesses. Built to scale and easy to manage.
             </p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                </svg>
+
+            <form onSubmit={handleSubscribe} className="w-full" aria-label="Subscribe to newsletter">
+              <label htmlFor="footer-email" className="sr-only">
+                Email address
+              </label>
+              <div className="flex gap-3 items-center">
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    id="footer-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Your email address"
+                    className="w-full rounded-lg border border-white/20 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/20 bg-white/95 text-slate-800 placeholder-slate-400"
+                    aria-invalid={status === "error"}
+                    aria-describedby={status === "error" ? "email-error" : undefined}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className={`inline-flex items-center gap-2 bg-white text-teal-700 font-semibold px-4 py-3 rounded-lg shadow-md transition ${
+                    submitting ? "opacity-80 pointer-events-none" : ""
+                  }`}
+                  aria-label="Subscribe"
+                >
+                  {submitting ? "Sending..." : "Subscribe"}
+                </button>
+              </div>
+
+              <div className="mt-3 min-h-[1.5rem]">
+                {status === "ok" && (
+                  <div role="status" className="text-sm text-emerald-200">
+                    Thanks — you're subscribed!
+                  </div>
+                )}
+                {status === "error" && (
+                  <div id="email-error" role="alert" className="text-sm text-rose-200">
+                    Please enter a valid email address.
+                  </div>
+                )}
+              </div>
+            </form>
+
+            <div className="mt-7 flex items-center gap-4">
+              <a href="mailto:hello@staffhub.example" className="inline-flex items-center gap-3 text-slate-100/95 hover:text-white transition" aria-label="Email">
+                <Mail className="w-5 h-5" />
+                <span className="text-sm">hello@staffhub.example</span>
               </a>
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                </svg>
+
+              <a href="tel:+911234567890" className="inline-flex items-center gap-3 text-slate-100/95 hover:text-white transition" aria-label="Phone">
+                <Phone className="w-5 h-5" />
+                <span className="text-sm">+91 12 3456 7890</span>
               </a>
-              <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                </svg>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <a aria-label="Facebook" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition" href="#">
+                <Facebook className="w-5 h-5 text-white" />
+              </a>
+              <a aria-label="Twitter" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition" href="#">
+                <Twitter className="w-5 h-5 text-white" />
+              </a>
+              <a aria-label="LinkedIn" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition" href="#">
+                <Linkedin className="w-5 h-5 text-white" />
+              </a>
+              <a aria-label="Instagram" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition" href="#">
+                <Instagram className="w-5 h-5 text-white" />
+              </a>
+              <a aria-label="YouTube" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition" href="#">
+                <Youtube className="w-5 h-5 text-white" />
               </a>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-white font-bold text-lg mb-6">Product</h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Security</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">API</a></li>
-            </ul>
+          {/* Quick links / Product / Company */}
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <nav aria-label="Product" className="flex flex-col">
+              <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
+              <ul className="flex flex-col gap-3 text-slate-100/85">
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="#features">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="#how-it-works">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    How it works
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/pricing">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/integrations">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Integrations
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+
+            <nav aria-label="Company" className="flex flex-col">
+              <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
+              <ul className="flex flex-col gap-3 text-slate-100/85">
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/about">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    About us
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/careers">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Careers
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/blog">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-flex items-center gap-3 hover:text-white transition" to="/contact">
+                    <ChevronRight className="w-4 h-4 text-white/60" />
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </nav>
           </div>
 
-          <div>
-            <h3 className="text-white font-bold text-lg mb-6">Company</h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Press Kit</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Contact</a></li>
-            </ul>
-          </div>
+          {/* Address / hours */}
+          <div className="lg:col-span-2">
+            <h4 className="text-sm font-semibold text-white mb-4">Contact & Office</h4>
+            <address className="not-italic text-slate-100/85 text-sm flex flex-col gap-3">
+              <div className="flex items-start gap-2">
+                <MapPin className="w-5 h-5 text-white/80 mt-1" />
+                <div>SSR Degree College, Jaganadha Puram, Machilipatnam, Andhra Pradesh 521001</div>
+              </div>
 
-          <div>
-            <h3 className="text-white font-bold text-lg mb-6">Contact</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <a href="mailto:support@staffhub.com" className="hover:text-blue-400 transition-colors">
-                  support@staffhub.com
+              <div className="flex items-center gap-2">
+                <Phone className="w-5 h-5 text-white/80" />
+                <a href="tel:+911234567890" className="hover:text-white transition">
+                  +91 12 3456 7890
                 </a>
-              </li>
-              <li className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <a href="tel:+1234567890" className="hover:text-blue-400 transition-colors">
-                  +1 (234) 567-890
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-white/80" />
+                <a href="mailto:hello@staffhub.example" className="hover:text-white transition">
+                  hello@staffhub.example
                 </a>
-              </li>
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <span>123 Business Street<br />San Francisco, CA 94102</span>
-              </li>
-            </ul>
+              </div>
+
+              <div className="pt-1 text-xs text-white/70">Mon–Fri: 9:00 — 18:00 IST</div>
+            </address>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-400 text-sm">
-              &copy; 2024 StaffHub. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Cookie Policy</a>
+        {/* Divider */}
+        <div className="border-t border-white/12 mt-12 pt-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="text-sm text-white/80">© {new Date().getFullYear()} StaffHub — All rights reserved.</div>
+
+            <div className="flex items-center gap-4">
+              <Link to="/terms" className="text-sm text-white/80 hover:text-white transition">Terms</Link>
+              <Link to="/privacy" className="text-sm text-white/80 hover:text-white transition">Privacy</Link>
+              <a href="/sitemap.xml" className="text-sm text-white/80 hover:text-white transition">Sitemap</a>
             </div>
           </div>
         </div>
       </div>
+
+      {/* back to top floating control */}
+      <button
+        onClick={scrollToTop}
+        aria-label="Back to top"
+        className="fixed right-4 bottom-6 z-40 inline-flex items-center justify-center w-12 h-12 rounded-full bg-white text-teal-700 shadow-lg hover:scale-105 transition transform focus:outline-none focus:ring-2 focus:ring-white/30"
+      >
+        <ChevronUp className="w-5 h-5" />
+      </button>
+
+      {/* Inline styles / keyframes (idempotent + respects reduced-motion) */}
+      <style>{`
+        @keyframes footerFloatNav {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+          100% { transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="animation"], svg[style*="animation"], .animate-* { animation: none !important; transition: none !important; }
+        }
+
+        /* Small responsive tweak for inputs on very small screens */
+        @media (max-width: 420px) {
+          input#footer-email { padding-left: 0.75rem; padding-right: 0.75rem; }
+        }
+      `}</style>
     </footer>
   );
 }
