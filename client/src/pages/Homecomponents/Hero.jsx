@@ -152,7 +152,7 @@ export default function Hero() {
           <div className="lg:col-span-7">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium animate-appear">
-                <svg className="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M20 12h-6M12 20v-6M4 12h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg className="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M20 12h-6M12 20v-6M4 12h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 Designed for colleges & institutions
               </span>
 
@@ -182,6 +182,12 @@ export default function Hero() {
                 >
                   See pricing
                 </a>
+                <Link to='/demo'
+                  
+                  className="inline-flex items-center gap-2 bg-black text-white px-5 py-3 rounded-lg hover:bg-slate-900 transition text-lg"
+                >
+                  Book a Demo
+                </Link>
               </div>
 
               {/* stat pills */}

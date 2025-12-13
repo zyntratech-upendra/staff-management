@@ -1,59 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';
-import { companyAPI, salaryAPI } from '../../services/api';
+// src/pages/company/CompanyDashboard.jsx
+import React, { useState, useEffect } from "react";
+import {
+  Menu,
+  Users,
+  UserPlus,
+  ClipboardList,
+  Wallet,
+  X,
+} from "lucide-react";
+import Navbar from "../../components/Navbar";
+import { companyAPI, salaryAPI } from "../../services/api";
 
-function CompanyDashboard({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('employees');
+/* ============================================================================
+   TOP NAVBAR + FIXED SIDEBAR + RESPONSIVE PERFECT ADMIN LAYOUT (B2)
+============================================================================ */
+
+export default function CompanyDashboard({ user, onLogout }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("employees");
+
   const [employees, setEmployees] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [salaries, setSalaries] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("");
+
+  /* ------------------------- FORM STATES ------------------------- */
   const [employeeForm, setEmployeeForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    address: '',
-    aadhaar: '',
-    pan: '',
-    bankDetails: {
-      accountNumber: '',
-      ifscCode: '',
-      bankName: '',
-      accountHolderName: ''
-    },
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
     salaryStructure: {
       basicSalary: 0,
       hra: 0,
       allowances: 0,
       grossSalary: 0,
-      pfApplicable: false,
-      pfAmount: 0,
-      esiApplicable: false,
-      esiAmount: 0
-    }
+    },
   });
 
   const [supervisorForm, setSupervisorForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    address: ''
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
   });
 
   const [salaryForm, setSalaryForm] = useState({
-    employeeId: '',
+    employeeId: "",
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
-    totalWorkingDays: 26
+    totalWorkingDays: 26,
   });
 
+  /* ------------------------- LOAD DATA -------------------------- */
   useEffect(() => {
     loadEmployees();
     loadSupervisors();
@@ -62,175 +67,37 @@ function CompanyDashboard({ user, onLogout }) {
   }, []);
 
   const loadEmployees = async () => {
-    try {
-      const response = await companyAPI.getEmployees();
-      setEmployees(response.data);
-    } catch (error) {
-      console.error('Error loading employees:', error);
-    }
-  };
-
-  const handlePromote = async (employeeId) => {
-    if (!window.confirm('Promote this employee to supervisor?')) return;
-    setLoading(true);
-    setMessage('');
-    try {
-      await companyAPI.promoteEmployee(employeeId);
-      setMessage('Employee promoted to supervisor');
-      loadEmployees();
-      loadSupervisors();
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to promote employee');
-    } finally {
-      setLoading(false);
-    }
+    const res = await companyAPI.getEmployees();
+    setEmployees(res.data);
   };
 
   const loadSupervisors = async () => {
-    try {
-      const response = await companyAPI.getSupervisors();
-      setSupervisors(response.data);
-    } catch (error) {
-      console.error('Error loading supervisors:', error);
-    }
+    const res = await companyAPI.getSupervisors();
+    setSupervisors(res.data);
   };
 
   const loadAttendance = async () => {
-    try {
-      const response = await companyAPI.getAttendance();
-      setAttendance(response.data);
-    } catch (error) {
-      console.error('Error loading attendance:', error);
-    }
+    const res = await companyAPI.getAttendance();
+    setAttendance(res.data);
   };
 
   const loadSalaries = async () => {
-    try {
-      const response = await salaryAPI.getAllSalaries();
-      setSalaries(response.data);
-    } catch (error) {
-      console.error('Error loading salaries:', error);
-    }
+    const res = await salaryAPI.getAllSalaries();
+    setSalaries(res.data);
   };
 
-  const handleEmployeeSubmit = async (e) => {
-    e.preventDefault();
+  /* ------------------------- ACTIONS ---------------------------- */
+  const handlePromote = async (id) => {
+    if (!window.confirm("Promote this employee?")) return;
     setLoading(true);
-    setMessage('');
-
     try {
-      const formData = { ...employeeForm };
-      formData.salaryStructure.grossSalary =
-        parseFloat(formData.salaryStructure.basicSalary) +
-        parseFloat(formData.salaryStructure.hra) +
-        parseFloat(formData.salaryStructure.allowances);
-
-      await companyAPI.registerEmployee(formData);
-      setMessage('Employee registered successfully');
-      setShowModal(false);
-      resetEmployeeForm();
+      await companyAPI.promoteEmployee(id);
+      setMessage("Employee promoted successfully");
       loadEmployees();
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to register employee');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSupervisorSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      await companyAPI.registerSupervisor(supervisorForm);
-      setMessage('Supervisor registered successfully');
-      setShowModal(false);
-      resetSupervisorForm();
       loadSupervisors();
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to register supervisor');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGenerateSalary = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      await salaryAPI.generateSalary(salaryForm);
-      setMessage('Salary generated successfully');
-      setShowModal(false);
-      loadSalaries();
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to generate salary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateAllSalaries = async (e) => {
-    // if called from a button without event
-    if (e && e.preventDefault) e.preventDefault();
-    if (!window.confirm('Generate salaries for ALL employees for the selected month?')) return;
-    setLoading(true);
-    setMessage('');
-
-    try {
-      await salaryAPI.generateAllSalaries({
-        month: salaryForm.month,
-        year: salaryForm.year,
-        totalWorkingDays: salaryForm.totalWorkingDays
-      });
-      setMessage('Salaries generated for all employees');
-      setShowModal(false);
-      loadSalaries();
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to generate salaries');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetEmployeeForm = () => {
-    setEmployeeForm({
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      address: '',
-      aadhaar: '',
-      pan: '',
-      bankDetails: {
-        accountNumber: '',
-        ifscCode: '',
-        bankName: '',
-        accountHolderName: ''
-      },
-      salaryStructure: {
-        basicSalary: 0,
-        hra: 0,
-        allowances: 0,
-        grossSalary: 0,
-        pfApplicable: false,
-        pfAmount: 0,
-        esiApplicable: false,
-        esiAmount: 0
-      }
-    });
-  };
-
-  const resetSupervisorForm = () => {
-    setSupervisorForm({
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      address: ''
-    });
   };
 
   const openModal = (type) => {
@@ -238,421 +105,534 @@ function CompanyDashboard({ user, onLogout }) {
     setShowModal(true);
   };
 
+  const handleEmployeeSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const form = { ...employeeForm };
+    form.salaryStructure.grossSalary =
+      Number(form.salaryStructure.basicSalary) +
+      Number(form.salaryStructure.hra) +
+      Number(form.salaryStructure.allowances);
+
+    await companyAPI.registerEmployee(form);
+    setMessage("Employee added successfully");
+    setShowModal(false);
+    loadEmployees();
+    setLoading(false);
+  };
+
+  const handleSupervisorSubmit = async (e) => {
+    e.preventDefault();
+    await companyAPI.registerSupervisor(supervisorForm);
+    setMessage("Supervisor added successfully");
+    setShowModal(false);
+    loadSupervisors();
+  };
+
+  const handleGenerateSalary = async (e) => {
+    e.preventDefault();
+    await salaryAPI.generateSalary(salaryForm);
+    setMessage("Salary generated successfully");
+    setShowModal(false);
+    loadSalaries();
+  };
+
+  /* ------------------------- SIDEBAR MENU ------------------------ */
+  const menu = [
+    { key: "employees", label: "Employees", icon: Users },
+    { key: "supervisors", label: "Supervisors", icon: UserPlus },
+    { key: "attendance", label: "Attendance", icon: ClipboardList },
+    { key: "salary", label: "Salary", icon: Wallet },
+  ];
+
+  /* ====================================================================
+     PERFECT RESPONSIVE ADMIN LAYOUT (B2)
+     NAVBAR FULL WIDTH, SIDEBAR FIXED LEFT, CONTENT ALIGNED
+  ==================================================================== */
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100">
+
+      {/* -------------- TOP FULL-WIDTH NAVBAR ---------------- */}
       <Navbar user={user} onLogout={onLogout} />
 
-      <div className="container">
-        <h1 style={{ marginBottom: '20px' }}>Company Dashboard</h1>
+      <div className="flex">
 
-        {message && (
-          <div className={`alert ${message.includes('success') ? 'alert-success' : 'alert-error'}`}>
-            {message}
+        {/* -------------------- SIDEBAR -------------------- */}
+        <aside
+          className={`fixed top-[82px] left-0 h-[calc(100vh-64px)] w-72 bg-white border-r shadow-md z-50
+            transition-transform duration-300
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          `}
+        >
+          <div className="p-5 border-b flex justify-between items-center">
+            <h2 className="text-xl font-bold">StaffHub</h2>
+            <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
+              <X className="w-6 h-6" />
+            </button>
           </div>
-        )}
 
-        <div style={{ marginBottom: '20px' }}>
+          <nav className="p-4 space-y-2">
+            {menu.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                  ${
+                    activeTab === key
+                      ? "bg-teal-600 text-white shadow"
+                      : "hover:bg-gray-100 text-gray-700"
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                {label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* -------------------- CONTENT AREA -------------------- */}
+        <main className="flex-1 lg:ml-72 px-6 py-6">
+
+          {/* Mobile Sidebar Button */}
           <button
-            className={`btn ${activeTab === 'employees' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('employees')}
-            style={{ marginRight: '10px' }}
+            className="lg:hidden mb-4 bg-white p-2 rounded-lg shadow"
+            onClick={() => setSidebarOpen(true)}
           >
-            Employees
+            <Menu />
           </button>
+
+          {/* Page Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+              {activeTab.toUpperCase()}
+            </h1>
+
+            {message && (
+              <div className="px-4 py-2 bg-teal-100 text-teal-700 rounded-lg shadow">
+                {message}
+              </div>
+            )}
+          </div>
+
+          {/* -------- TAB CONTENT -------- */}
+          {activeTab === "employees" && (
+            <EmployeesTab
+              employees={employees}
+              onAdd={() => openModal("employee")}
+              onPromote={handlePromote}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === "supervisors" && (
+            <SupervisorsTab
+              supervisors={supervisors}
+              onAdd={() => openModal("supervisor")}
+            />
+          )}
+
+          {activeTab === "attendance" && <AttendanceTab attendance={attendance} />}
+
+          {activeTab === "salary" && (
+            <SalaryTab salaries={salaries} onAdd={() => openModal("salary")} />
+          )}
+        </main>
+      </div>
+
+      {/* -------- MODALS -------- */}
+      {showModal && modalType === "employee" && (
+        <EmployeeModal
+          onClose={() => setShowModal(false)}
+          employeeForm={employeeForm}
+          setEmployeeForm={setEmployeeForm}
+          onSubmit={handleEmployeeSubmit}
+          loading={loading}
+        />
+      )}
+
+      {showModal && modalType === "supervisor" && (
+        <SupervisorModal
+          onClose={() => setShowModal(false)}
+          supervisorForm={supervisorForm}
+          setSupervisorForm={setSupervisorForm}
+          onSubmit={handleSupervisorSubmit}
+          loading={loading}
+        />
+      )}
+
+      {showModal && modalType === "salary" && (
+        <SalaryModal
+          onClose={() => setShowModal(false)}
+          salaryForm={salaryForm}
+          setSalaryForm={setSalaryForm}
+          employees={employees}
+          onSubmit={handleGenerateSalary}
+          loading={loading}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ============================================================================
+   TAB COMPONENTS
+============================================================================ */
+
+function EmployeesTab({ employees, onAdd, onPromote, loading }) {
+  return (
+    <Card title="Employees" buttonLabel="Add Employee" onAdd={onAdd}>
+      <Table
+        headers={["Name", "Email", "Phone", "Gross Salary", "Status", "Action"]}
+      >
+        {employees.map((e) => (
+          <tr key={e._id} className="hover:bg-gray-50">
+            <td className="py-2">{e.name}</td>
+            <td>{e.email}</td>
+            <td>{e.phone}</td>
+            <td>₹{e.salaryStructure?.grossSalary}</td>
+            <td>
+              <Badge type={e.isActive ? "success" : "danger"}>
+                {e.isActive ? "Active" : "Inactive"}
+              </Badge>
+            </td>
+            <td>
+              <button
+                className="px-3 py-1 border rounded-lg hover:bg-gray-200"
+                onClick={() => onPromote(e._id)}
+                disabled={loading}
+              >
+                Promote
+              </button>
+            </td>
+          </tr>
+        ))}
+      </Table>
+    </Card>
+  );
+}
+
+/* -------------------- Supervisor Tab -------------------- */
+function SupervisorsTab({ supervisors, onAdd }) {
+  return (
+    <Card title="Supervisors" buttonLabel="Add Supervisor" onAdd={onAdd}>
+      <Table headers={["Name", "Email", "Phone", "Status"]}>
+        {supervisors.map((s) => (
+          <tr key={s._id} className="hover:bg-gray-50">
+            <td className="py-2">{s.name}</td>
+            <td>{s.email}</td>
+            <td>{s.phone}</td>
+            <td>
+              <Badge type={s.isActive ? "success" : "danger"}>
+                {s.isActive ? "Active" : "Inactive"}
+              </Badge>
+            </td>
+          </tr>
+        ))}
+      </Table>
+    </Card>
+  );
+}
+
+/* -------------------- Attendance Tab -------------------- */
+function AttendanceTab({ attendance }) {
+  return (
+    <Card title="Attendance Records">
+      <Table headers={["Employee", "Date", "Status", "Supervisor", "Remarks"]}>
+        {attendance.map((att) => (
+          <tr key={att._id} className="hover:bg-gray-50">
+            <td className="py-2">{att.employeeId?.name}</td>
+            <td>{new Date(att.date).toLocaleDateString()}</td>
+            <td>
+              <Badge
+                type={
+                  att.status === "Present"
+                    ? "success"
+                    : att.status === "Absent"
+                    ? "danger"
+                    : "warning"
+                }
+              >
+                {att.status}
+              </Badge>
+            </td>
+            <td>{att.supervisorId?.name}</td>
+            <td>{att.remarks || "-"}</td>
+          </tr>
+        ))}
+      </Table>
+    </Card>
+  );
+}
+
+/* -------------------- Salary Tab -------------------- */
+function SalaryTab({ salaries, onAdd }) {
+  return (
+    <Card title="Salary Records" buttonLabel="Generate Salary" onAdd={onAdd}>
+      <Table
+        headers={[
+          "Employee",
+          "Month/Year",
+          "Days Worked",
+          "Gross",
+          "Net",
+          "Status",
+        ]}
+      >
+        {salaries.map((sal) => (
+          <tr key={sal._id} className="hover:bg-gray-50">
+            <td className="py-2">{sal.employeeId?.name}</td>
+            <td>
+              {sal.month}/{sal.year}
+            </td>
+            <td>{sal.daysWorked}</td>
+            <td>₹{sal.grossSalary}</td>
+            <td>₹{sal.netSalary.toFixed(2)}</td>
+            <td>
+              <Badge type={sal.status === "generated" ? "success" : "warning"}>
+                {sal.status}
+              </Badge>
+            </td>
+          </tr>
+        ))}
+      </Table>
+    </Card>
+  );
+}
+
+/* ============================================================================
+   REUSABLE COMPONENTS
+============================================================================ */
+
+function Card({ title, buttonLabel, onAdd, children }) {
+  return (
+    <div className="bg-white border rounded-xl shadow-sm p-5 mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">{title}</h3>
+
+        {buttonLabel && (
           <button
-            className={`btn ${activeTab === 'supervisors' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('supervisors')}
-            style={{ marginRight: '10px' }}
+            onClick={onAdd}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
           >
-            Supervisors
+            {buttonLabel}
           </button>
-          <button
-            className={`btn ${activeTab === 'attendance' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('attendance')}
-            style={{ marginRight: '10px' }}
-          >
-            Attendance
-          </button>
-          <button
-            className={`btn ${activeTab === 'salary' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('salary')}
-          >
-            Salary
+        )}
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function Table({ headers, children }) {
+  return (
+    <div className="overflow-x-auto border rounded-lg">
+      <table className="w-full text-left">
+        <thead className="bg-gray-100">
+          <tr>
+            {headers.map((h) => (
+              <th key={h} className="px-4 py-3 border-b font-medium text-gray-700">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function Badge({ children, type }) {
+  const colors = {
+    success: "bg-green-100 text-green-700",
+    danger: "bg-red-100 text-red-700",
+    warning: "bg-yellow-100 text-yellow-700",
+  };
+
+  return (
+    <span className={`px-3 py-1 rounded-lg text-sm ${colors[type]}`}>
+      {children}
+    </span>
+  );
+}
+
+/* ============================================================================
+   MODALS
+============================================================================ */
+
+function ModalWrapper({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{title}</h3>
+          <button className="text-2xl" onClick={onClose}>
+            ×
           </button>
         </div>
 
-        {activeTab === 'employees' && (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2>Employees</h2>
-              <button className="btn btn-primary" onClick={() => openModal('employee')}>
-                Add Employee
-              </button>
-            </div>
-
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Gross Salary</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp._id}>
-                    <td>{emp.name}</td>
-                    <td>{emp.email}</td>
-                    <td>{emp.phone}</td>
-                    <td>₹{emp.salaryStructure?.grossSalary || 0}</td>
-                    <td>
-                      <span className={`badge ${emp.isActive ? 'badge-success' : 'badge-danger'}`}>
-                        {emp.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="btn btn-sm btn-outline" onClick={() => handlePromote(emp._id)} disabled={loading}>
-                        Promote
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 'supervisors' && (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2>Supervisors</h2>
-              <button className="btn btn-primary" onClick={() => openModal('supervisor')}>
-                Add Supervisor
-              </button>
-            </div>
-
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {supervisors.map((sup) => (
-                  <tr key={sup._id}>
-                    <td>{sup.name}</td>
-                    <td>{sup.email}</td>
-                    <td>{sup.phone}</td>
-                    <td>
-                      <span className={`badge ${sup.isActive ? 'badge-success' : 'badge-danger'}`}>
-                        {sup.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 'attendance' && (
-          <div className="card">
-            <h2 style={{ marginBottom: '20px' }}>Attendance Records</h2>
-
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Supervisor</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendance.map((att) => (
-                  <tr key={att._id}>
-                    <td>{att.employeeId?.name}</td>
-                    <td>{new Date(att.date).toLocaleDateString()}</td>
-                    <td>
-                      <span className={`badge badge-${att.status === 'Present' ? 'success' : att.status === 'Absent' ? 'danger' : 'warning'}`}>
-                        {att.status}
-                      </span>
-                    </td>
-                    <td>{att.supervisorId?.name}</td>
-                    <td>{att.remarks || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 'salary' && (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2>Salary Records</h2>
-              <button className="btn btn-primary" onClick={() => openModal('salary')}>
-                Generate Salary
-              </button>
-            </div>
-
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Month/Year</th>
-                  <th>Days Worked</th>
-                  <th>Gross Salary</th>
-                  <th>Net Salary</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {salaries.map((sal) => (
-                  <tr key={sal._id}>
-                    <td>{sal.employeeId?.name}</td>
-                    <td>{sal.month}/{sal.year}</td>
-                    <td>{sal.daysWorked}</td>
-                    <td>₹{sal.grossSalary}</td>
-                    <td>₹{sal.netSalary.toFixed(2)}</td>
-                    <td>
-                      <span className={`badge badge-${sal.status === 'generated' ? 'success' : 'warning'}`}>
-                        {sal.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {showModal && modalType === 'employee' && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>Add Employee</h3>
-                <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
-              </div>
-
-              <form onSubmit={handleEmployeeSubmit}>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    value={employeeForm.name}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={employeeForm.email}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Password</label>
-                  <input
-                    type="password"
-                    value={employeeForm.password}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    value={employeeForm.phone}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Basic Salary</label>
-                  <input
-                    type="number"
-                    value={employeeForm.salaryStructure.basicSalary}
-                    onChange={(e) => setEmployeeForm({
-                      ...employeeForm,
-                      salaryStructure: { ...employeeForm.salaryStructure, basicSalary: e.target.value }
-                    })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>HRA</label>
-                  <input
-                    type="number"
-                    value={employeeForm.salaryStructure.hra}
-                    onChange={(e) => setEmployeeForm({
-                      ...employeeForm,
-                      salaryStructure: { ...employeeForm.salaryStructure, hra: e.target.value }
-                    })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Allowances</label>
-                  <input
-                    type="number"
-                    value={employeeForm.salaryStructure.allowances}
-                    onChange={(e) => setEmployeeForm({
-                      ...employeeForm,
-                      salaryStructure: { ...employeeForm.salaryStructure, allowances: e.target.value }
-                    })}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Adding...' : 'Add Employee'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showModal && modalType === 'supervisor' && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>Add Supervisor</h3>
-                <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
-              </div>
-
-              <form onSubmit={handleSupervisorSubmit}>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    value={supervisorForm.name}
-                    onChange={(e) => setSupervisorForm({ ...supervisorForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={supervisorForm.email}
-                    onChange={(e) => setSupervisorForm({ ...supervisorForm, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Password</label>
-                  <input
-                    type="password"
-                    value={supervisorForm.password}
-                    onChange={(e) => setSupervisorForm({ ...supervisorForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    value={supervisorForm.phone}
-                    onChange={(e) => setSupervisorForm({ ...supervisorForm, phone: e.target.value })}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Adding...' : 'Add Supervisor'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showModal && modalType === 'salary' && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>Generate Salary</h3>
-                <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
-              </div>
-
-              <form onSubmit={handleGenerateSalary}>
-                <div className="form-group">
-                  <label>Employee</label>
-                  <select
-                    value={salaryForm.employeeId}
-                    onChange={(e) => setSalaryForm({ ...salaryForm, employeeId: e.target.value })}
-                    required
-                  >
-                    <option value="">Select Employee</option>
-                    {employees.map((emp) => (
-                      <option key={emp._id} value={emp._id}>
-                        {emp.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Month</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={salaryForm.month}
-                    onChange={(e) => setSalaryForm({ ...salaryForm, month: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Year</label>
-                  <input
-                    type="number"
-                    value={salaryForm.year}
-                    onChange={(e) => setSalaryForm({ ...salaryForm, year: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Total Working Days</label>
-                  <input
-                    type="number"
-                    value={salaryForm.totalWorkingDays}
-                    onChange={(e) => setSalaryForm({ ...salaryForm, totalWorkingDays: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Generating...' : 'Generate Salary'}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={handleGenerateAllSalaries} disabled={loading} style={{ marginLeft: '10px' }}>
-                  {loading ? 'Generating...' : 'Generate All Salaries'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        {children}
       </div>
     </div>
   );
 }
 
-export default CompanyDashboard;
+function EmployeeModal({
+  onClose,
+  employeeForm,
+  setEmployeeForm,
+  onSubmit,
+  loading,
+}) {
+  return (
+    <ModalWrapper title="Add Employee" onClose={onClose}>
+      <form onSubmit={onSubmit} className="space-y-4">
+
+        <Input label="Name" value={employeeForm.name} onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })} />
+
+        <Input label="Email" value={employeeForm.email} onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })} />
+
+        <Input label="Password" type="password" value={employeeForm.password} onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })} />
+
+        <Input label="Phone" value={employeeForm.phone} onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })} />
+
+        <Input
+          label="Basic Salary"
+          type="number"
+          value={employeeForm.salaryStructure.basicSalary}
+          onChange={(e) =>
+            setEmployeeForm({
+              ...employeeForm,
+              salaryStructure: {
+                ...employeeForm.salaryStructure,
+                basicSalary: e.target.value,
+              },
+            })
+          }
+        />
+
+        <Input
+          label="HRA"
+          type="number"
+          value={employeeForm.salaryStructure.hra}
+          onChange={(e) =>
+            setEmployeeForm({
+              ...employeeForm,
+              salaryStructure: {
+                ...employeeForm.salaryStructure,
+                hra: e.target.value,
+              },
+            })
+          }
+        />
+
+        <Input
+          label="Allowances"
+          type="number"
+          value={employeeForm.salaryStructure.allowances}
+          onChange={(e) =>
+            setEmployeeForm({
+              ...employeeForm,
+              salaryStructure: {
+                ...employeeForm.salaryStructure,
+                allowances: e.target.value,
+              },
+            })
+          }
+        />
+
+        <button className="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+          {loading ? "Adding..." : "Add Employee"}
+        </button>
+      </form>
+    </ModalWrapper>
+  );
+}
+
+function SupervisorModal({
+  onClose,
+  supervisorForm,
+  setSupervisorForm,
+  onSubmit,
+  loading,
+}) {
+  return (
+    <ModalWrapper title="Add Supervisor" onClose={onClose}>
+      <form onSubmit={onSubmit} className="space-y-4">
+
+        <Input label="Name" value={supervisorForm.name} onChange={(e) => setSupervisorForm({ ...supervisorForm, name: e.target.value })} />
+
+        <Input label="Email" value={supervisorForm.email} onChange={(e) => setSupervisorForm({ ...supervisorForm, email: e.target.value })} />
+
+        <Input label="Password" type="password" value={supervisorForm.password} onChange={(e) => setSupervisorForm({ ...supervisorForm, password: e.target.value })} />
+
+        <Input label="Phone" value={supervisorForm.phone} onChange={(e) => setSupervisorForm({ ...supervisorForm, phone: e.target.value })} />
+
+        <button className="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+          {loading ? "Adding..." : "Add Supervisor"}
+        </button>
+      </form>
+    </ModalWrapper>
+  );
+}
+
+function SalaryModal({
+  onClose,
+  salaryForm,
+  setSalaryForm,
+  employees,
+  onSubmit,
+  loading,
+}) {
+  return (
+    <ModalWrapper title="Generate Salary" onClose={onClose}>
+      <form onSubmit={onSubmit} className="space-y-4">
+
+        <div>
+          <label className="font-medium">Employee</label>
+          <select
+            value={salaryForm.employeeId}
+            onChange={(e) =>
+              setSalaryForm({ ...salaryForm, employeeId: e.target.value })
+            }
+            className="w-full mt-1 px-3 py-2 border rounded-lg"
+          >
+            <option value="">Select Employee</option>
+            {employees.map((e) => (
+              <option key={e._id} value={e._id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <Input label="Month" type="number" value={salaryForm.month} onChange={(e) => setSalaryForm({ ...salaryForm, month: e.target.value })} />
+
+        <Input label="Year" type="number" value={salaryForm.year} onChange={(e) => setSalaryForm({ ...salaryForm, year: e.target.value })} />
+
+        <Input label="Total Working Days" type="number" value={salaryForm.totalWorkingDays} onChange={(e) => setSalaryForm({ ...salaryForm, totalWorkingDays: e.target.value })} />
+
+        <button className="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+          {loading ? "Generating..." : "Generate Salary"}
+        </button>
+      </form>
+    </ModalWrapper>
+  );
+}
+
+/* -------------------- Input Component -------------------- */
+function Input({ label, value, onChange, type = "text" }) {
+  return (
+    <div>
+      <label className="font-medium">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        className="w-full mt-1 px-3 py-2 border rounded-lg"
+      />
+    </div>
+  );
+}
