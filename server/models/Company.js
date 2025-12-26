@@ -37,6 +37,10 @@ const companySchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  supervisors: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   isActive: {
     type: Boolean,
     default: true

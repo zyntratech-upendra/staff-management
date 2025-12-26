@@ -1,14 +1,15 @@
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
+const Assignment = require('../models/Assignment');
+const Company = require('../models/Company');
 
 exports.markAttendance = async (req, res) => {
   try {
-    const { employeeId, date, status, remarks, checkInTime, checkOutTime } = req.body;
-
+    const { employeeId, companyId, date, status, remarks, checkInTime, checkOutTime } = req.body;
+     
     const employee = await User.findOne({
       _id: employeeId,
-      role: 'employee',
-      companyId: req.user.companyId
+      role: 'employee'
     });
 
     if (!employee) {
@@ -16,7 +17,21 @@ exports.markAttendance = async (req, res) => {
     }
 
     const attendanceDate = new Date(date);
-    attendanceDate.setHours(0, 0, 0, 0);
+    
+    attendanceDate.setUTCHours(0, 0, 0, 0);
+
+    const assignment = await Assignment.findOne({
+      employeeId,
+      companyId,
+      status: 'active',
+      startDate: { $lte: attendanceDate },
+      endDate: { $gte: attendanceDate }
+    });
+
+    
+    if (!assignment) {
+      return res.status(400).json({ message: 'Employee not assigned to this company on the selected date' });
+    }
 
     const existingAttendance = await Attendance.findOne({
       employeeId,
@@ -39,7 +54,7 @@ exports.markAttendance = async (req, res) => {
 
     const attendance = new Attendance({
       employeeId,
-      companyId: req.user.companyId,
+      companyId,
       supervisorId: req.userId,
       date: attendanceDate,
       status,
@@ -67,8 +82,9 @@ exports.getAttendanceByEmployee = async (req, res) => {
 
     const query = {
       employeeId,
-      companyId: req.user.companyId
     };
+
+    console.log(query);
 
     if (month && year) {
       const startDate = new Date(year, month - 1, 1);
@@ -89,11 +105,37 @@ exports.getAttendanceByEmployee = async (req, res) => {
 
 exports.getEmployeesForAttendance = async (req, res) => {
   try {
-    const employees = await User.find({
-      role: 'employee',
-      companyId: req.user.companyId,
-      isActive: true
-    }).select('name email phone');
+    const { companyId, date } = req.query;
+
+    if (!companyId) {
+      return res.status(400).json({ message: 'Company ID is required' });
+    }
+
+    // normalize target date to UTC midnight (same approach used when saving attendance)
+    const target = date ? new Date(date) : new Date();
+    target.setUTCHours(0, 0, 0, 0);
+
+    // Find existing attendance entries for that company+date and exclude those employees
+    const existing = await Attendance.find({ companyId, date: target }).select('employeeId');
+    const attendedIds = existing.map(a => a.employeeId.toString());
+
+    const now = new Date();
+    const assignments = await Assignment.find({
+      companyId,
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    }).populate('employeeId', 'name email phone');
+
+    const employees = assignments
+      .filter(assignment => !attendedIds.includes(assignment.employeeId._id.toString()))
+      .map(assignment => ({
+        _id: assignment.employeeId._id,
+        name: assignment.employeeId.name,
+        email: assignment.employeeId.email,
+        phone: assignment.employeeId.phone,
+        assignmentId: assignment._id
+      }));
 
     res.json(employees);
   } catch (error) {
@@ -105,17 +147,42 @@ exports.getEmployeesForAttendance = async (req, res) => {
 exports.getTodayAttendance = async (req, res) => {
   try {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const attendance = await Attendance.find({
-      companyId: req.user.companyId,
       supervisorId: req.userId,
       date: today
-    }).populate('employeeId', 'name email');
+    })
+      .populate('employeeId', 'name email')
+      .populate('companyId', 'name companyCode');
 
     res.json(attendance);
   } catch (error) {
     console.error('Get today attendance error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAllCompaniesForSupervisor = async (req, res) => {
+  try {
+    // First, try to get companies where this supervisor is explicitly listed
+    const companies = await Company.find({ supervisors: req.userId, isActive: true }).select('name companyCode');
+    if (companies && companies.length > 0) {
+      return res.json(companies);
+    }
+
+    // Fallback: derive companies from active assignments (in case supervisors are linked via assignments)
+    const now = new Date();
+    const companyIds = await Assignment.find({
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    }).distinct('companyId');
+
+    const companiesFromAssignments = await Company.find({ _id: { $in: companyIds }, isActive: true }).select('name companyCode');
+    res.json(companiesFromAssignments);
+  } catch (error) {
+    console.error('Get companies error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
