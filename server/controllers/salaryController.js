@@ -16,8 +16,12 @@ const calculateDailySalary = (dailyRate, presentDays, halfDays, paidLeaves) => {
 
 exports.generateSalary = async (req, res) => {
   try {
-    const { employeeId, month, year, assignmentId } = req.body;
-    const companyId = req.user.companyId;
+    const { employeeId, month, year, assignmentId, companyId: bodyCompanyId } = req.body;
+    let companyId = req.user.companyId;
+    // allow admin to specify companyId when generating salary from admin dashboard
+    if (req.user && req.user.role === 'admin' && bodyCompanyId) {
+      companyId = bodyCompanyId;
+    }
 
     const assignment = await Assignment.findOne({
       _id: assignmentId,

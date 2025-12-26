@@ -8,6 +8,7 @@ router.get('/employees/:employeeId', authenticate, authorize('company'), company
 router.get('/assignments', authenticate, authorize('company'), companyController.getAllAssignments);
 
 router.get('/supervisors', authenticate, authorize('company'), companyController.getSupervisors);
+router.post('/supervisors', authenticate, authorize('company'), companyController.registerSupervisor);
 
 router.get('/attendance', authenticate, authorize('company'), companyController.getAttendanceSummary);
 

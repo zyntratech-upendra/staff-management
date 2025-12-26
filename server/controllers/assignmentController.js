@@ -51,6 +51,13 @@ exports.createAssignment = async (req, res) => {
 
     await assignment.save();
 
+    // Update employee profile with assigned company
+    try {
+      await User.findByIdAndUpdate(employeeId, { companyId: companyId, companyCode: company.companyCode });
+    } catch (err) {
+      console.error('Failed to update user company info:', err);
+    }
+
     res.status(201).json({
       message: 'Assignment created successfully',
       assignment
@@ -122,6 +129,25 @@ exports.updateAssignment = async (req, res) => {
     assignment.updatedAt = Date.now();
     await assignment.save();
 
+    // If assignment is active, ensure user's company is set to this assignment's company
+    try {
+      if (assignment.status === 'active') {
+        const comp = await Company.findById(assignment.companyId);
+        await User.findByIdAndUpdate(assignment.employeeId, { companyId: assignment.companyId, companyCode: comp?.companyCode });
+      } else if (assignment.status === 'completed') {
+        // if completed, check for other active assignments; if none, clear user's company
+        const active = await Assignment.findOne({ employeeId: assignment.employeeId, status: 'active' });
+        if (!active) {
+          await User.findByIdAndUpdate(assignment.employeeId, { $unset: { companyId: 1, companyCode: 1 } });
+        } else {
+          const comp = await Company.findById(active.companyId);
+          await User.findByIdAndUpdate(assignment.employeeId, { companyId: active.companyId, companyCode: comp?.companyCode });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync user company after assignment update:', err);
+    }
+
     res.json({
       message: 'Assignment updated successfully',
       assignment
@@ -145,6 +171,19 @@ exports.completeAssignment = async (req, res) => {
     assignment.endDate = new Date();
     assignment.updatedAt = Date.now();
     await assignment.save();
+
+    // If employee has no other active assignments, clear company on user profile
+    try {
+      const otherActive = await Assignment.findOne({ employeeId: assignment.employeeId, status: 'active' });
+      if (!otherActive) {
+        await User.findByIdAndUpdate(assignment.employeeId, { $unset: { companyId: 1, companyCode: 1 } });
+      } else {
+        const comp = await Company.findById(otherActive.companyId);
+        await User.findByIdAndUpdate(assignment.employeeId, { companyId: otherActive.companyId, companyCode: comp?.companyCode });
+      }
+    } catch (err) {
+      console.error('Failed to sync user company after completing assignment:', err);
+    }
 
     res.json({
       message: 'Assignment completed successfully',

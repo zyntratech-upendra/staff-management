@@ -15,5 +15,7 @@ router.put('/employees/:employeeId', authenticate, authorize('admin'), adminCont
 
 router.post('/supervisors', authenticate, authorize('admin'), adminController.registerSupervisor);
 router.get('/supervisors', authenticate, authorize('admin'), adminController.getAllSupervisors);
+router.put('/supervisors/:supervisorId', authenticate, authorize('admin'), adminController.updateSupervisor);
+router.delete('/supervisors/:supervisorId', authenticate, authorize('admin'), adminController.deleteSupervisor);
 
 module.exports = router;

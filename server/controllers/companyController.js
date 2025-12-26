@@ -51,14 +51,53 @@ exports.getAllAssignments = async (req, res) => {
 
 exports.getSupervisors = async (req, res) => {
   try {
-    const supervisors = await User.find({
-      role: 'supervisor',
-      isActive: true
-    }).select('-password');
+    const companyId = req.user.companyId;
+    if (!companyId) {
+      return res.status(400).json({ message: 'Company not associated with user' });
+    }
 
+    // Prefer company document supervisors array if present
+    const Company = require('../models/Company');
+    const company = await Company.findById(companyId).populate({ path: 'supervisors', select: '-password' });
+    if (company && company.supervisors) {
+      return res.json(company.supervisors);
+    }
+
+    // Fallback: query supervisors with companyId
+    const supervisors = await User.find({ role: 'supervisor', companyId, isActive: true }).select('-password');
     res.json(supervisors);
   } catch (error) {
     console.error('Get supervisors error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.registerSupervisor = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!companyId) return res.status(400).json({ message: 'Company not associated with user' });
+
+    const { name, email, password, phone } = req.body;
+
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ message: 'Email already registered' });
+
+    const supervisor = new User({
+      role: 'supervisor',
+      name,
+      email,
+      password,
+      phone,
+      companyId
+    });
+
+    await supervisor.save();
+
+    await require('../models/Company').findByIdAndUpdate(companyId, { $addToSet: { supervisors: supervisor._id } });
+
+    res.status(201).json({ message: 'Supervisor created', supervisor: { id: supervisor._id, name: supervisor.name, email: supervisor.email } });
+  } catch (error) {
+    console.error('Company register supervisor error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

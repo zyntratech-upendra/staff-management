@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.post(
   '/generate',
   authenticate,
-  authorize('company'),
+  authorize('admin'),
   salaryController.generateSalary
 );
 

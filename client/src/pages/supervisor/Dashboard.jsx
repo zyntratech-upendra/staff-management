@@ -37,9 +37,14 @@ function SupervisorDashboard({ user, onLogout }) {
   const loadCompanies = async () => {
     try {
       const response = await attendanceAPI.getCompanies();
+      console.log(response)
       setCompanies(response.data);
-      if (response.data.length > 0) {
+      if (response.data.length === 1) {
         setSelectedCompanyId(response.data[0]._id);
+        setAttendanceForm(prev => ({ ...prev, companyId: response.data[0]._id }));
+      } else {
+        setSelectedCompanyId('');
+        setAttendanceForm(prev => ({ ...prev, companyId: '' }));
       }
     } catch (error) {
       console.error('Error loading companies:', error);
@@ -48,7 +53,7 @@ function SupervisorDashboard({ user, onLogout }) {
 
   const loadEmployees = async () => {
     try {
-      const response = await attendanceAPI.getEmployees({ companyId: selectedCompanyId });
+      const response = await attendanceAPI.getEmployees({ companyId: selectedCompanyId, date: attendanceForm.date });
       setEmployees(response.data);
     } catch (error) {
       console.error('Error loading employees:', error);
@@ -58,11 +63,15 @@ function SupervisorDashboard({ user, onLogout }) {
   const loadTodayAttendance = async () => {
     try {
       const response = await attendanceAPI.getTodayAttendance();
+      console.log(response);
       setTodayAttendance(response.data);
     } catch (error) {
       console.error('Error loading today attendance:', error);
     }
   };
+
+console.log(companies);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,25 +123,44 @@ function SupervisorDashboard({ user, onLogout }) {
         )}
 
         <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-          <label style={{ marginRight: '15px', fontWeight: 'bold' }}>Select Company:</label>
-          <select
-            value={selectedCompanyId}
-            onChange={(e) => setSelectedCompanyId(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              minWidth: '250px'
-            }}
-          >
-            <option value="">Choose a company</option>
-            {companies.map((comp) => (
-              <option key={comp._id} value={comp._id}>
-                {comp.name}
-              </option>
-            ))}
-          </select>
+          {companies.length === 0 && (
+            <div style={{ color: '#666' }}>
+              You are not assigned to any company.
+            </div>
+          )}
+
+          {companies.length === 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label style={{ fontWeight: 'bold' }}>Company:</label>
+              <div style={{ padding: '8px 12px', borderRadius: '4px', background: '#fff', border: '1px solid #ddd', minWidth: '250px' }}>
+                {companies[0].name}
+              </div>
+            </div>
+          )}
+
+          {companies.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label style={{ marginRight: '15px', fontWeight: 'bold' }}>Select Company:</label>
+              <select
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  fontSize: '14px',
+                  minWidth: '250px'
+                }}
+              >
+                <option value="">Choose a company</option>
+                {companies.map((comp) => (
+                  <option key={comp._id} value={comp._id}>
+                    {comp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom: '20px' }}>

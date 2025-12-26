@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import { adminAPI, assignmentAPI } from '../../services/api';
+import { adminAPI, assignmentAPI, salaryAPI } from '../../services/api';
 
 function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('stats');
@@ -14,6 +14,7 @@ function AdminDashboard({ user, onLogout }) {
   const [modalType, setModalType] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  
 
   const [companyForm, setCompanyForm] = useState({
     name: '',
@@ -39,8 +40,11 @@ function AdminDashboard({ user, onLogout }) {
     email: '',
     password: '',
     phone: '',
-    address: ''
+    address: '',
+    companyId: ''
   });
+  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+  const [reassignCompanyId, setReassignCompanyId] = useState('');
 
   const [assignmentForm, setAssignmentForm] = useState({
     employeeId: '',
@@ -49,6 +53,11 @@ function AdminDashboard({ user, onLogout }) {
     endDate: '',
     dailySalary: '',
     notes: ''
+  });
+  const [salaryForm, setSalaryForm] = useState({
+    assignmentId: '',
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
   });
 
   useEffect(() => {
@@ -187,12 +196,50 @@ function AdminDashboard({ user, onLogout }) {
         email: '',
         password: '',
         phone: '',
-        address: ''
+        address: '',
+        companyId: ''
       });
       loadSupervisors();
       loadStats();
     } catch (error) {
       setMessage(error.response?.data?.message || 'Failed to register supervisor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSupervisor = async (supervisorId) => {
+    if (!window.confirm('Delete this supervisor? This action cannot be undone.')) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      await adminAPI.deleteSupervisor(supervisorId);
+      setMessage('Supervisor deleted successfully');
+      loadSupervisors();
+      loadCompanies();
+      loadStats();
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Failed to delete supervisor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReassignSupervisor = async (e) => {
+    e.preventDefault();
+    if (!selectedSupervisor) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      await adminAPI.updateSupervisor(selectedSupervisor._id, { companyId: reassignCompanyId });
+      setMessage('Supervisor reassigned successfully');
+      setShowModal(false);
+      setSelectedSupervisor(null);
+      setReassignCompanyId('');
+      loadSupervisors();
+      loadCompanies();
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Failed to reassign supervisor');
     } finally {
       setLoading(false);
     }
@@ -219,6 +266,33 @@ function AdminDashboard({ user, onLogout }) {
       loadStats();
     } catch (error) {
       setMessage(error.response?.data?.message || 'Failed to create assignment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateSalary = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const assignment = assignments.find(a => a._id === salaryForm.assignmentId);
+      if (!assignment) throw new Error('Assignment not found');
+
+      const payload = {
+        employeeId: assignment.employeeId?._id || assignment.employeeId,
+        assignmentId: salaryForm.assignmentId,
+        month: salaryForm.month,
+        year: salaryForm.year,
+        companyId: assignment.companyId?._id || assignment.companyId
+      };
+
+      await salaryAPI.generateSalary(payload);
+      setMessage('Salary generated successfully');
+      setShowModal(false);
+      setSalaryForm({ assignmentId: '', month: new Date().getMonth() + 1, year: new Date().getFullYear() });
+    } catch (error) {
+      setMessage(error.response?.data?.message || error.message || 'Failed to generate salary');
     } finally {
       setLoading(false);
     }
@@ -415,6 +489,8 @@ function AdminDashboard({ user, onLogout }) {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
+                  <th>Company</th>
+                  <th>Actions</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -424,6 +500,15 @@ function AdminDashboard({ user, onLogout }) {
                     <td>{sup.name}</td>
                     <td>{sup.email}</td>
                     <td>{sup.phone}</td>
+                    <td>{sup.companyId?.name || '-'}</td>
+                    <td>
+                      <button className="btn btn-sm btn-secondary" onClick={() => openModal('reassign-supervisor') || (setSelectedSupervisor(sup), setReassignCompanyId(sup.companyId?._id || ''))} style={{ marginRight: '8px' }}>
+                        Reassign
+                      </button>
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDeleteSupervisor(sup._id)}>
+                        Delete
+                      </button>
+                    </td>
                     <td>
                       <span className={`badge ${sup.isActive ? 'badge-success' : 'badge-danger'}`}>
                         {sup.isActive ? 'Active' : 'Inactive'}
@@ -440,9 +525,14 @@ function AdminDashboard({ user, onLogout }) {
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2>Assignments</h2>
-              <button className="btn btn-primary" onClick={() => openModal('assignment')}>
-                Create Assignment
-              </button>
+              <div>
+                <button className="btn btn-primary" onClick={() => openModal('assignment')} style={{ marginRight: '8px' }}>
+                  Create Assignment
+                </button>
+                <button className="btn btn-secondary" onClick={() => openModal('salary')}>
+                  Generate Salary
+                </button>
+              </div>
             </div>
 
             <table className="table">
@@ -701,6 +791,22 @@ function AdminDashboard({ user, onLogout }) {
                   />
                 </div>
 
+                <div className="form-group">
+                  <label>Company</label>
+                  <select
+                    value={supervisorForm.companyId}
+                    onChange={(e) => setSupervisorForm({ ...supervisorForm, companyId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Company</option>
+                    {companies.map((comp) => (
+                      <option key={comp._id} value={comp._id}>
+                        {comp.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading ? 'Registering...' : 'Register Supervisor'}
                 </button>
@@ -792,6 +898,95 @@ function AdminDashboard({ user, onLogout }) {
 
                 <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading ? 'Creating...' : 'Create Assignment'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+        {showModal && modalType === 'salary' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Generate Salary</h3>
+                <button className="close-btn" onClick={() => setShowModal(false)}>
+                  &times;
+                </button>
+              </div>
+
+              <form onSubmit={handleGenerateSalary}>
+                <div className="form-group">
+                  <label>Assignment</label>
+                  <select
+                    value={salaryForm.assignmentId}
+                    onChange={(e) => setSalaryForm({ ...salaryForm, assignmentId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Active Assignment</option>
+                    {assignments.filter(a => a.status === 'active').map((a) => (
+                      <option key={a._id} value={a._id}>
+                        {a.employeeId?.name || a.employeeId} - {a.companyId?.name || a.companyId}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Month</label>
+                  <input
+                    type="number"
+                    value={salaryForm.month}
+                    onChange={(e) => setSalaryForm({ ...salaryForm, month: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Year</label>
+                  <input
+                    type="number"
+                    value={salaryForm.year}
+                    onChange={(e) => setSalaryForm({ ...salaryForm, year: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Generating...' : 'Generate Salary'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+        {showModal && modalType === 'reassign-supervisor' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Reassign Supervisor to Company</h3>
+                <button className="close-btn" onClick={() => { setShowModal(false); setSelectedSupervisor(null); }}>
+                  &times;
+                </button>
+              </div>
+
+              <form onSubmit={handleReassignSupervisor}>
+                <div className="form-group">
+                  <label>Supervisor</label>
+                  <input type="text" value={selectedSupervisor?.name || ''} readOnly />
+                </div>
+
+                <div className="form-group">
+                  <label>Company</label>
+                  <select value={reassignCompanyId} onChange={(e) => setReassignCompanyId(e.target.value)} required>
+                    <option value="">Select Company</option>
+                    {companies.map((comp) => (
+                      <option key={comp._id} value={comp._id}>
+                        {comp.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Saving...' : 'Reassign'}
                 </button>
               </form>
             </div>

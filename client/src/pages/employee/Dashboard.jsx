@@ -9,6 +9,7 @@ function EmployeeDashboard({ user, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  console.log(payslips)
 
   useEffect(() => {
     loadProfile();
@@ -50,6 +51,8 @@ function EmployeeDashboard({ user, onLogout }) {
     }
   };
 
+  console.log(attendance);
+
   const getAttendanceStats = () => {
     const present = attendance.filter(a => a.status === 'Present').length;
     const absent = attendance.filter(a => a.status === 'Absent').length;
@@ -60,6 +63,9 @@ function EmployeeDashboard({ user, onLogout }) {
   };
 
   const stats = getAttendanceStats();
+
+
+
 
   return (
     <div>
@@ -191,8 +197,6 @@ function EmployeeDashboard({ user, onLogout }) {
                 <tr>
                   <th>Month/Year</th>
                   <th>Days Worked</th>
-                  <th>Gross Salary</th>
-                  <th>Deductions</th>
                   <th>Net Salary</th>
                   <th>Status</th>
                 </tr>
@@ -203,9 +207,10 @@ function EmployeeDashboard({ user, onLogout }) {
                     <tr key={sal._id}>
                       <td>{new Date(2000, sal.month - 1, 1).toLocaleString('default', { month: 'long' })} {sal.year}</td>
                       <td>{sal.daysWorked}</td>
-                      <td>₹{sal.grossSalary.toFixed(2)}</td>
-                      <td>₹{sal.totalDeductions.toFixed(2)}</td>
-                      <td>₹{sal.netSalary.toFixed(2)}</td>
+                   
+                     
+                      <td>₹{sal.totalEarnings
+.toFixed(2)}</td>
                       <td>
                         <span className={`badge badge-${sal.status === 'generated' ? 'success' : 'warning'}`}>
                           {sal.status}

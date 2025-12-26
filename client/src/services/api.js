@@ -51,7 +51,9 @@ export const adminAPI = {
   getEmployees: () => api.get('/admin/employees'),
   updateEmployee: (employeeId, data) => api.put(`/admin/employees/${employeeId}`, data),
   registerSupervisor: (data) => api.post('/admin/supervisors', data),
-  getSupervisors: () => api.get('/admin/supervisors')
+  getSupervisors: () => api.get('/admin/supervisors'),
+  updateSupervisor: (supervisorId, data) => api.put(`/admin/supervisors/${supervisorId}`, data),
+  deleteSupervisor: (supervisorId) => api.delete(`/admin/supervisors/${supervisorId}`)
 };
 
 export const assignmentAPI = {
@@ -71,6 +73,7 @@ export const companyAPI = {
   getEmployeeDetails: (employeeId) => api.get(`/company/employees/${employeeId}`),
   getAssignments: (params) => api.get('/company/assignments', { params }),
   getSupervisors: () => api.get('/company/supervisors'),
+  registerSupervisor: (data) => api.post('/company/supervisors', data),
   getAttendance: (params) => api.get('/company/attendance', { params })
 };
 
