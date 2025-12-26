@@ -207,8 +207,6 @@ function EmployeeDashboard({ user, onLogout }) {
                     <tr key={sal._id}>
                       <td>{new Date(2000, sal.month - 1, 1).toLocaleString('default', { month: 'long' })} {sal.year}</td>
                       <td>{sal.daysWorked}</td>
-                   
-                     
                       <td>₹{sal.totalEarnings
 .toFixed(2)}</td>
                       <td>

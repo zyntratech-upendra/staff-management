@@ -51,6 +51,8 @@ export default function CompanyDashboard({ user, onLogout }) {
     phone: "",
   });
 
+  console.log(employees)
+
   const [salaryForm, setSalaryForm] = useState({
     employeeId: "",
     month: new Date().getMonth() + 1,
@@ -275,36 +277,27 @@ export default function CompanyDashboard({ user, onLogout }) {
   );
 }
 
+
+
+
 /* ============================================================================
    TAB COMPONENTS
 ============================================================================ */
 
 function EmployeesTab({ employees, onAdd, onPromote, loading }) {
   return (
-    <Card title="Employees" buttonLabel="Add Employee" onAdd={onAdd}>
+    <Card title="Employees">
       <Table
-        headers={["Name", "Email", "Phone", "Gross Salary", "Status", "Action"]}
+        headers={["Name", "Email", "Phone", "Daily Salary","Start Date","End Date"]}
       >
         {employees.map((e) => (
           <tr key={e._id} className="hover:bg-gray-50">
             <td className="py-2">{e.name}</td>
             <td>{e.email}</td>
             <td>{e.phone}</td>
-            <td>₹{e.salaryStructure?.grossSalary}</td>
-            <td>
-              <Badge type={e.isActive ? "success" : "danger"}>
-                {e.isActive ? "Active" : "Inactive"}
-              </Badge>
-            </td>
-            <td>
-              <button
-                className="px-3 py-1 border rounded-lg hover:bg-gray-200"
-                onClick={() => onPromote(e._id)}
-                disabled={loading}
-              >
-                Promote
-              </button>
-            </td>
+            <td>₹{e.dailySalary}</td>
+            <td>{new Date(e.startDate).toLocaleDateString()}</td>
+            <td>{e.endDate ? new Date(e.endDate).toLocaleDateString() : "-"}</td>
           </tr>
         ))}
       </Table>
@@ -315,7 +308,7 @@ function EmployeesTab({ employees, onAdd, onPromote, loading }) {
 /* -------------------- Supervisor Tab -------------------- */
 function SupervisorsTab({ supervisors, onAdd }) {
   return (
-    <Card title="Supervisors" buttonLabel="Add Supervisor" onAdd={onAdd}>
+    <Card title="Supervisors">
       <Table headers={["Name", "Email", "Phone", "Status"]}>
         {supervisors.map((s) => (
           <tr key={s._id} className="hover:bg-gray-50">
