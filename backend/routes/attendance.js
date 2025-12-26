@@ -4,6 +4,7 @@ const attendanceController = require('../controllers/attendanceController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 router.post('/', authenticate, authorize('supervisor'), attendanceController.markAttendance);
+router.get('/companies', authenticate, authorize('supervisor'), attendanceController.getAllCompaniesForSupervisor);
 router.get('/employees', authenticate, authorize('supervisor'), attendanceController.getEmployeesForAttendance);
 router.get('/today', authenticate, authorize('supervisor'), attendanceController.getTodayAttendance);
 router.get('/employee/:employeeId', authenticate, authorize('supervisor', 'company', 'employee'), attendanceController.getAttendanceByEmployee);

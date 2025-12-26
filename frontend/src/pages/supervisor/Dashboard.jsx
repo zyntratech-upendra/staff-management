@@ -4,6 +4,8 @@ import { attendanceAPI } from '../../services/api';
 
 function SupervisorDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('today');
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [employees, setEmployees] = useState([]);
   const [todayAttendance, setTodayAttendance] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +14,7 @@ function SupervisorDashboard({ user, onLogout }) {
 
   const [attendanceForm, setAttendanceForm] = useState({
     employeeId: '',
+    companyId: '',
     date: new Date().toISOString().split('T')[0],
     status: 'Present',
     remarks: '',
@@ -20,13 +23,32 @@ function SupervisorDashboard({ user, onLogout }) {
   });
 
   useEffect(() => {
-    loadEmployees();
+    loadCompanies();
     loadTodayAttendance();
   }, []);
 
+  useEffect(() => {
+    if (selectedCompanyId) {
+      loadEmployees();
+      setAttendanceForm(prev => ({ ...prev, companyId: selectedCompanyId }));
+    }
+  }, [selectedCompanyId]);
+
+  const loadCompanies = async () => {
+    try {
+      const response = await attendanceAPI.getCompanies();
+      setCompanies(response.data);
+      if (response.data.length > 0) {
+        setSelectedCompanyId(response.data[0]._id);
+      }
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    }
+  };
+
   const loadEmployees = async () => {
     try {
-      const response = await attendanceAPI.getEmployees();
+      const response = await attendanceAPI.getEmployees({ companyId: selectedCompanyId });
       setEmployees(response.data);
     } catch (error) {
       console.error('Error loading employees:', error);
@@ -47,12 +69,23 @@ function SupervisorDashboard({ user, onLogout }) {
     setLoading(true);
     setMessage('');
 
+    if (!selectedCompanyId) {
+      setMessage('Please select a company first');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await attendanceAPI.markAttendance(attendanceForm);
+      const formData = {
+        ...attendanceForm,
+        companyId: selectedCompanyId
+      };
+      await attendanceAPI.markAttendance(formData);
       setMessage('Attendance marked successfully');
       setShowModal(false);
       setAttendanceForm({
         employeeId: '',
+        companyId: selectedCompanyId,
         date: new Date().toISOString().split('T')[0],
         status: 'Present',
         remarks: '',
@@ -80,6 +113,28 @@ function SupervisorDashboard({ user, onLogout }) {
           </div>
         )}
 
+        <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+          <label style={{ marginRight: '15px', fontWeight: 'bold' }}>Select Company:</label>
+          <select
+            value={selectedCompanyId}
+            onChange={(e) => setSelectedCompanyId(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              minWidth: '250px'
+            }}
+          >
+            <option value="">Choose a company</option>
+            {companies.map((comp) => (
+              <option key={comp._id} value={comp._id}>
+                {comp.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ marginBottom: '20px' }}>
           <button
             className={`btn ${activeTab === 'today' ? 'btn-primary' : 'btn-secondary'}`}
@@ -92,7 +147,7 @@ function SupervisorDashboard({ user, onLogout }) {
             className={`btn ${activeTab === 'employees' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setActiveTab('employees')}
           >
-            Employees
+            Company Employees
           </button>
         </div>
 
@@ -100,74 +155,102 @@ function SupervisorDashboard({ user, onLogout }) {
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2>Today's Attendance</h2>
-              <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowModal(true)}
+                disabled={!selectedCompanyId}
+              >
                 Mark Attendance
               </button>
             </div>
 
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Status</th>
-                  <th>Check In</th>
-                  <th>Check Out</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {todayAttendance.length > 0 ? (
-                  todayAttendance.map((att) => (
-                    <tr key={att._id}>
-                      <td>{att.employeeId?.name}</td>
-                      <td>
-                        <span className={`badge badge-${att.status === 'Present' ? 'success' : att.status === 'Absent' ? 'danger' : 'warning'}`}>
-                          {att.status}
-                        </span>
-                      </td>
-                      <td>{att.checkInTime || '-'}</td>
-                      <td>{att.checkOutTime || '-'}</td>
-                      <td>{att.remarks || '-'}</td>
-                    </tr>
-                  ))
-                ) : (
+            {!selectedCompanyId ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                Please select a company above to mark attendance
+              </div>
+            ) : (
+              <table className="table">
+                <thead>
                   <tr>
-                    <td colSpan="5" style={{ textAlign: 'center' }}>
-                      No attendance marked today
-                    </td>
+                    <th>Employee</th>
+                    <th>Status</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Remarks</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {todayAttendance.length > 0 ? (
+                    todayAttendance.map((att) => (
+                      <tr key={att._id}>
+                        <td>{att.employeeId?.name}</td>
+                        <td>
+                          <span className={`badge badge-${att.status === 'Present' ? 'success' : att.status === 'Absent' ? 'danger' : 'warning'}`}>
+                            {att.status}
+                          </span>
+                        </td>
+                        <td>{att.checkInTime || '-'}</td>
+                        <td>{att.checkOutTime || '-'}</td>
+                        <td>{att.remarks || '-'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center' }}>
+                        No attendance marked today
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
         {activeTab === 'employees' && (
           <div className="card">
-            <h2 style={{ marginBottom: '20px' }}>Employees</h2>
+            <h2 style={{ marginBottom: '20px' }}>
+              {selectedCompanyId ? 'Company Employees' : 'Select a company to view employees'}
+            </h2>
 
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp._id}>
-                    <td>{emp.name}</td>
-                    <td>{emp.email}</td>
-                    <td>{emp.phone || '-'}</td>
+            {!selectedCompanyId ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                Please select a company above to view employees
+              </div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Assignment End</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {employees.length > 0 ? (
+                    employees.map((emp) => (
+                      <tr key={emp._id}>
+                        <td>{emp.name}</td>
+                        <td>{emp.email}</td>
+                        <td>{emp.phone || '-'}</td>
+                        <td>{emp.endDate ? new Date(emp.endDate).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center' }}>
+                        No employees assigned to this company
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
-        {showModal && (
+        {showModal && selectedCompanyId && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">

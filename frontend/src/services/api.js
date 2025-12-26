@@ -46,30 +46,44 @@ export const adminAPI = {
   getCompanies: () => api.get('/admin/companies'),
   toggleCompanyStatus: (companyId) => api.patch(`/admin/companies/${companyId}/toggle`),
   resetCompanyPassword: (companyId, data) => api.post(`/admin/companies/${companyId}/reset-password`, data),
-  getStats: () => api.get('/admin/stats')
+  getStats: () => api.get('/admin/stats'),
+  registerEmployee: (data) => api.post('/admin/employees', data),
+  getEmployees: () => api.get('/admin/employees'),
+  updateEmployee: (employeeId, data) => api.put(`/admin/employees/${employeeId}`, data),
+  registerSupervisor: (data) => api.post('/admin/supervisors', data),
+  getSupervisors: () => api.get('/admin/supervisors')
+};
+
+export const assignmentAPI = {
+  createAssignment: (data) => api.post('/assignments', data),
+  getAllAssignments: (params) => api.get('/assignments', { params }),
+  getAssignmentById: (assignmentId) => api.get(`/assignments/${assignmentId}`),
+  updateAssignment: (assignmentId, data) => api.put(`/assignments/${assignmentId}`, data),
+  completeAssignment: (assignmentId) => api.patch(`/assignments/${assignmentId}/complete`),
+  getFreeEmployees: () => api.get('/assignments/free-employees'),
+  checkAssignmentStatus: () => api.get('/assignments/check-status'),
+  getCompanyAssignments: (params) => api.get('/assignments/company', { params }),
+  getActiveEmployees: () => api.get('/assignments/company/active-employees')
 };
 
 export const companyAPI = {
-  registerEmployee: (data) => api.post('/company/employees', data),
   getEmployees: () => api.get('/company/employees'),
-  updateEmployee: (employeeId, data) => api.put(`/company/employees/${employeeId}`, data),
-  uploadDocument: (employeeId, data) => api.post(`/company/employees/${employeeId}/documents`, data),
-  registerSupervisor: (data) => api.post('/company/supervisors', data),
+  getEmployeeDetails: (employeeId) => api.get(`/company/employees/${employeeId}`),
+  getAssignments: (params) => api.get('/company/assignments', { params }),
   getSupervisors: () => api.get('/company/supervisors'),
-  promoteEmployee: (employeeId) => api.patch(`/company/employees/${employeeId}/promote`),
   getAttendance: (params) => api.get('/company/attendance', { params })
 };
 
 export const attendanceAPI = {
   markAttendance: (data) => api.post('/attendance', data),
-  getEmployees: () => api.get('/attendance/employees'),
+  getCompanies: () => api.get('/attendance/companies'),
+  getEmployees: (params) => api.get('/attendance/employees', { params }),
   getTodayAttendance: () => api.get('/attendance/today'),
   getAttendanceByEmployee: (employeeId, params) => api.get(`/attendance/employee/${employeeId}`, { params })
 };
 
 export const salaryAPI = {
   generateSalary: (data) => api.post('/salary/generate', data),
-  generateAllSalaries: (data) => api.post('/salary/generate-all', data),
   getAllSalaries: (params) => api.get('/salary/all', { params }),
   getSalaryByEmployee: (employeeId, params) => api.get(`/salary/employee/${employeeId}`, { params }),
   getMyPayslips: () => api.get('/salary/my-payslips')

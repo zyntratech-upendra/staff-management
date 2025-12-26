@@ -8,6 +8,7 @@ const adminRoutes = require('./routes/admin');
 const companyRoutes = require('./routes/company');
 const attendanceRoutes = require('./routes/attendance');
 const salaryRoutes = require('./routes/salary');
+const assignmentRoutes = require('./routes/assignment');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/salary', salaryRoutes);
+app.use('/api/assignments', assignmentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });

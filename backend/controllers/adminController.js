@@ -135,3 +135,139 @@ exports.resetCompanyPassword = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.registerEmployee = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      phone,
+      address,
+      aadhaar,
+      pan,
+      bankDetails,
+      salaryStructure
+    } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    const employee = new User({
+      role: 'employee',
+      name,
+      email,
+      password,
+      phone,
+      address,
+      aadhaar,
+      pan,
+      bankDetails,
+      salaryStructure
+    });
+
+    await employee.save();
+
+    res.status(201).json({
+      message: 'Employee registered successfully',
+      employee: {
+        id: employee._id,
+        name: employee.name,
+        email: employee.email
+      }
+    });
+  } catch (error) {
+    console.error('Register employee error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAllEmployees = async (req, res) => {
+  try {
+    const employees = await User.find({
+      role: 'employee'
+    }).select('-password');
+
+    res.json(employees);
+  } catch (error) {
+    console.error('Get employees error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const updateData = req.body;
+
+    const employee = await User.findOne({
+      _id: employeeId,
+      role: 'employee'
+    });
+
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    Object.assign(employee, updateData);
+    employee.updatedAt = Date.now();
+    await employee.save();
+
+    res.json({
+      message: 'Employee updated successfully',
+      employee
+    });
+  } catch (error) {
+    console.error('Update employee error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.registerSupervisor = async (req, res) => {
+  try {
+    const { name, email, password, phone, address } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    const supervisor = new User({
+      role: 'supervisor',
+      name,
+      email,
+      password,
+      phone,
+      address
+    });
+
+    await supervisor.save();
+
+    res.status(201).json({
+      message: 'Supervisor registered successfully',
+      supervisor: {
+        id: supervisor._id,
+        name: supervisor.name,
+        email: supervisor.email
+      }
+    });
+  } catch (error) {
+    console.error('Register supervisor error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAllSupervisors = async (req, res) => {
+  try {
+    const supervisors = await User.find({
+      role: 'supervisor'
+    }).select('-password');
+
+    res.json(supervisors);
+  } catch (error) {
+    console.error('Get supervisors error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

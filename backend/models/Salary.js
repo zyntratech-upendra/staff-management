@@ -11,6 +11,10 @@ const salarySchema = new mongoose.Schema({
     ref: 'Company',
     required: true
   },
+  assignmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assignment'
+  },
   month: {
     type: Number,
     required: true,
@@ -21,13 +25,8 @@ const salarySchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  totalWorkingDays: {
-    type: Number,
-    required: true
-  },
   presentDays: {
     type: Number,
-    required: true,
     default: 0
   },
   halfDays: {
@@ -46,43 +45,11 @@ const salarySchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  basicSalary: {
+  dailySalary: {
     type: Number,
     required: true
   },
-  hra: {
-    type: Number,
-    default: 0
-  },
-  allowances: {
-    type: Number,
-    default: 0
-  },
-  grossSalary: {
-    type: Number,
-    required: true
-  },
-  perDaySalary: {
-    type: Number,
-    required: true
-  },
-  monthlyEarnings: {
-    type: Number,
-    required: true
-  },
-  pfDeduction: {
-    type: Number,
-    default: 0
-  },
-  esiDeduction: {
-    type: Number,
-    default: 0
-  },
-  totalDeductions: {
-    type: Number,
-    default: 0
-  },
-  netSalary: {
+  totalEarnings: {
     type: Number,
     required: true
   },
@@ -104,6 +71,6 @@ const salarySchema = new mongoose.Schema({
   }
 });
 
-salarySchema.index({ employeeId: 1, month: 1, year: 1 }, { unique: true });
+salarySchema.index({ employeeId: 1, companyId: 1, month: 1, year: 1 }, { unique: true });
 
 module.exports = mongoose.model('Salary', salarySchema);

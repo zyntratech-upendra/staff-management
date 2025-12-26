@@ -1,14 +1,14 @@
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
+const Assignment = require('../models/Assignment');
 
 exports.markAttendance = async (req, res) => {
   try {
-    const { employeeId, date, status, remarks, checkInTime, checkOutTime } = req.body;
+    const { employeeId, companyId, date, status, remarks, checkInTime, checkOutTime } = req.body;
 
     const employee = await User.findOne({
       _id: employeeId,
-      role: 'employee',
-      companyId: req.user.companyId
+      role: 'employee'
     });
 
     if (!employee) {
@@ -17,6 +17,18 @@ exports.markAttendance = async (req, res) => {
 
     const attendanceDate = new Date(date);
     attendanceDate.setHours(0, 0, 0, 0);
+
+    const assignment = await Assignment.findOne({
+      employeeId,
+      companyId,
+      status: 'active',
+      startDate: { $lte: attendanceDate },
+      endDate: { $gte: attendanceDate }
+    });
+
+    if (!assignment) {
+      return res.status(400).json({ message: 'Employee not assigned to this company on the selected date' });
+    }
 
     const existingAttendance = await Attendance.findOne({
       employeeId,
@@ -39,7 +51,7 @@ exports.markAttendance = async (req, res) => {
 
     const attendance = new Attendance({
       employeeId,
-      companyId: req.user.companyId,
+      companyId,
       supervisorId: req.userId,
       date: attendanceDate,
       status,
@@ -89,11 +101,27 @@ exports.getAttendanceByEmployee = async (req, res) => {
 
 exports.getEmployeesForAttendance = async (req, res) => {
   try {
-    const employees = await User.find({
-      role: 'employee',
-      companyId: req.user.companyId,
-      isActive: true
-    }).select('name email phone');
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      return res.status(400).json({ message: 'Company ID is required' });
+    }
+
+    const now = new Date();
+    const assignments = await Assignment.find({
+      companyId,
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    }).populate('employeeId', 'name email phone');
+
+    const employees = assignments.map(assignment => ({
+      _id: assignment.employeeId._id,
+      name: assignment.employeeId.name,
+      email: assignment.employeeId.email,
+      phone: assignment.employeeId.phone,
+      assignmentId: assignment._id
+    }));
 
     res.json(employees);
   } catch (error) {
@@ -108,14 +136,33 @@ exports.getTodayAttendance = async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     const attendance = await Attendance.find({
-      companyId: req.user.companyId,
       supervisorId: req.userId,
       date: today
-    }).populate('employeeId', 'name email');
+    })
+      .populate('employeeId', 'name email')
+      .populate('companyId', 'name companyCode');
 
     res.json(attendance);
   } catch (error) {
     console.error('Get today attendance error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAllCompaniesForSupervisor = async (req, res) => {
+  try {
+    const now = new Date();
+    const assignments = await Assignment.find({
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    })
+      .populate('companyId', 'name companyCode')
+      .distinct('companyId');
+
+    res.json(assignments);
+  } catch (error) {
+    console.error('Get companies error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
