@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import { adminAPI, assignmentAPI, salaryAPI } from '../../services/api';
+import { adminAPI, assignmentAPI, salaryAPI, attendanceAPI } from '../../services/api';
 
 function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('stats');
@@ -10,6 +10,12 @@ function AdminDashboard({ user, onLogout }) {
   const [supervisors, setSupervisors] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [freeEmployees, setFreeEmployees] = useState([]);
+  const [employeeSummary, setEmployeeSummary] = useState([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const now = new Date();
+  const [summaryRange, setSummaryRange] = useState({ month: now.getMonth() + 1, year: now.getFullYear() });
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0,10));
+  const [presentEmployees, setPresentEmployees] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,6 +116,48 @@ function AdminDashboard({ user, onLogout }) {
       setAssignments(response.data);
     } catch (error) {
       console.error('Error loading assignments:', error);
+    }
+  };
+
+  const loadEmployeeSummary = async (month, year) => {
+    setSummaryLoading(true);
+    setEmployeeSummary([]);
+    try {
+      const empResp = await adminAPI.getEmployees();
+      const emps = empResp.data || [];
+      const summaryPromises = emps.map(async (emp) => {
+        try {
+          const attResp = await attendanceAPI.getAttendanceByEmployee(emp._id, { month, year });
+          const attendanceRecords = attResp.data || [];
+          const daysPresent = attendanceRecords.filter(r => r.status && r.status.toLowerCase().includes('present')).length || attendanceRecords.length;
+          const salResp = await salaryAPI.getSalaryByEmployee(emp._id, { month, year });
+          const salaries = salResp.data || [];
+          const totalSalary = salaries.reduce((s, x) => s + (x.totalEarnings || x.totalAmount || x.amount || 0), 0);
+          return { employee: emp, daysPresent, totalSalary };
+        } catch (err) {
+          return { employee: emp, daysPresent: 0, totalSalary: 0 };
+        }
+      });
+
+      const summaries = await Promise.all(summaryPromises);
+      setEmployeeSummary(summaries);
+    } catch (error) {
+      console.error('Error loading employee summary:', error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const loadPresentEmployeesByDate = async (date) => {
+    try {
+      const resp = await adminAPI.getAttendanceByDate({ date });
+      // API returns attendance records; map to employee info
+      const records = resp.data || [];
+      const employees = records.map(r => ({ _id: r.employeeId?._id || r.employeeId, name: r.employeeId?.name, email: r.employeeId?.email, phone: r.employeeId?.phone }));
+      setPresentEmployees(employees);
+    } catch (error) {
+      console.error('Error loading present employees for date:', error);
+      setPresentEmployees([]);
     }
   };
 
@@ -309,12 +357,25 @@ function AdminDashboard({ user, onLogout }) {
     }
   };
 
+  console.log('Employee Summary:', employeeSummary);
+
   const openModal = (type) => {
     if (type === 'assignment') {
       loadFreeEmployees();
     }
     setModalType(type);
     setShowModal(true);
+  };
+
+  const openEmployeeSummary = () => {
+    setActiveTab('employee-summary');
+    loadEmployeeSummary(summaryRange.month, summaryRange.year);
+  };
+
+  const openAttendanceByDate = (dateParam) => {
+    const dateToUse = dateParam || attendanceDate;
+    setActiveTab('attendance-by-date');
+    loadPresentEmployeesByDate(dateToUse);
   };
 
   return (
@@ -364,6 +425,20 @@ function AdminDashboard({ user, onLogout }) {
             onClick={() => setActiveTab('assignments')}
           >
             Assignments
+          </button>
+          <button
+            className={`btn ${activeTab === 'employee-summary' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => openEmployeeSummary()}
+            style={{ marginLeft: '10px' }}
+          >
+            Employee Summary
+          </button>
+          <button
+            className={`btn ${activeTab === 'attendance-by-date' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => openAttendanceByDate()}
+            style={{ marginLeft: '10px' }}
+          >
+            Attendance By Date
           </button>
         </div>
 
@@ -559,6 +634,77 @@ function AdminDashboard({ user, onLogout }) {
                         {assign.status}
                       </span>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'employee-summary' && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2>Employee Summary</h2>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <label style={{ marginRight: '6px' }}>Month</label>
+                <input type="number" min="1" max="12" value={summaryRange.month} onChange={(e) => setSummaryRange({ ...summaryRange, month: parseInt(e.target.value || 0) })} style={{ width: '80px' }} />
+                <label style={{ marginLeft: '8px', marginRight: '6px' }}>Year</label>
+                <input type="number" min="2000" max="2100" value={summaryRange.year} onChange={(e) => setSummaryRange({ ...summaryRange, year: parseInt(e.target.value || 0) })} style={{ width: '100px' }} />
+                <button className="btn btn-primary" onClick={() => loadEmployeeSummary(summaryRange.month, summaryRange.year)} style={{ marginLeft: '8px' }}>
+                  {summaryLoading ? 'Loading...' : 'Load Summary'}
+                </button>
+              </div>
+            </div>
+
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Days Present</th>
+                  <th>Total Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employeeSummary.map((s) => (
+                  <tr key={s.employee._id}>
+                    <td>{s.employee.name}</td>
+                    <td>{s.employee.email}</td>
+                    <td>{s.daysPresent}</td>
+                    <td>₹{s.totalSalary}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'attendance-by-date' && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2>Attendance By Date</h2>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} />
+                <button className="btn btn-primary" onClick={() => loadPresentEmployeesByDate(attendanceDate)}>
+                  Load
+                </button>
+              </div>
+            </div>
+
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                </tr>
+              </thead>
+              <tbody>
+                {presentEmployees.map((emp) => (
+                  <tr key={emp._id}>
+                    <td>{emp.name}</td>
+                    <td>{emp.email}</td>
+                    <td>{emp.phone || '-'}</td>
                   </tr>
                 ))}
               </tbody>

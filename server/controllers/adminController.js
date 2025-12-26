@@ -349,3 +349,33 @@ exports.deleteSupervisor = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.getAttendanceByDate = async (req, res) => {
+  try {
+    const { date, companyId } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'Date is required in query (YYYY-MM-DD)' });
+    }
+
+    const Attendance = require('../models/Attendance');
+
+    const target = new Date(date);
+    target.setUTCHours(0, 0, 0, 0);
+
+    const query = { date: target };
+    if (companyId) query.companyId = companyId;
+
+    const attendanceRecords = await Attendance.find(query)
+      .populate('employeeId', 'name email phone')
+      .populate('companyId', 'name companyCode')
+      .sort({ date: -1 });
+
+    // return list of present employees (records with status 'Present' or similar)
+    const present = attendanceRecords.filter(r => r.status && r.status.toLowerCase().includes('present'));
+
+    res.json(present);
+  } catch (error) {
+    console.error('Get admin attendance by date error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

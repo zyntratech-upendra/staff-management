@@ -17,5 +17,6 @@ router.post('/supervisors', authenticate, authorize('admin'), adminController.re
 router.get('/supervisors', authenticate, authorize('admin'), adminController.getAllSupervisors);
 router.put('/supervisors/:supervisorId', authenticate, authorize('admin'), adminController.updateSupervisor);
 router.delete('/supervisors/:supervisorId', authenticate, authorize('admin'), adminController.deleteSupervisor);
+router.get('/attendance', authenticate, authorize('admin'), adminController.getAttendanceByDate);
 
 module.exports = router;

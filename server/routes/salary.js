@@ -13,21 +13,21 @@ router.post(
 router.get(
   '/all',
   authenticate,
-  authorize('company'),
+  authorize('company','admin'),
   salaryController.getAllSalaries
 );
 
 router.get(
   '/employee/:employeeId',
   authenticate,
-  authorize('company'),
+  authorize('company','admin'),
   salaryController.getSalaryByEmployee
 );
 
 router.get(
   '/my-payslips',
   authenticate,
-  authorize('employee'),
+  authorize('employee','admins'),
   salaryController.getMyPayslips
 );
 

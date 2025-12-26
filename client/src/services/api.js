@@ -54,6 +54,7 @@ export const adminAPI = {
   getSupervisors: () => api.get('/admin/supervisors'),
   updateSupervisor: (supervisorId, data) => api.put(`/admin/supervisors/${supervisorId}`, data),
   deleteSupervisor: (supervisorId) => api.delete(`/admin/supervisors/${supervisorId}`)
+  ,getAttendanceByDate: (params) => api.get('/admin/attendance', { params })
 };
 
 export const assignmentAPI = {
