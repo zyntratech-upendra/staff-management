@@ -1,5 +1,5 @@
 {
-  "name": "staffing-backend",
+  "name": "server",
   "version": "1.0.0",
   "description": "Staffing Management System Backend",
   "main": "server.js",

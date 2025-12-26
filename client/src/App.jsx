@@ -10,6 +10,7 @@ import SupervisorProfile from './pages/supervisor/Profile';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import EmployeeProfile from './pages/employee/Profile';
 import Home from './pages/Home';
+import BookDemo from './pages/BookDemo';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -57,7 +58,10 @@ function App() {
           path="/login"
           element={user ? <Navigate to={`/${user.role}`} /> : <Login onLogin={handleLogin} />}
         />
-
+        <Route
+          path='/demo'
+          element={<BookDemo/>}
+          />
         <Route
           path="/admin"
           element={
