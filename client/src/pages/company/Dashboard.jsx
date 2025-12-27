@@ -1,43 +1,37 @@
 // src/pages/company/CompanyDashboard.jsx
 import React, { useState, useEffect } from "react";
 import {
-  Menu,
   Users,
   UserPlus,
   ClipboardList,
   Wallet,
-  X,
-  Search,
-  Loader2, // Added for loading spinner
 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import { companyAPI, salaryAPI } from "../../services/api";
 
-/* ============================================================================
-   TOP NAVBAR + FIXED SIDEBAR + RESPONSIVE PERFECT ADMIN LAYOUT (B2)
-   + OPTIMIZED FUNCTIONALITIES (Search, Parallel Fetch, Safe Math)
-============================================================================ */
+/**
+ * CompanyDashboard (Glassmorphism Layout)
+ * Functionality strictly aligned with "Code 2":
+ * - Removed derived stats (Present Today, Counts, etc.)
+ * - Removed Hero Stats Card
+ * - Sequential Data Loading
+ * - Preserved original CSS
+ */
 
 export default function CompanyDashboard({ user, onLogout }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("employees");
 
-  // Data States
   const [employees, setEmployees] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [salaries, setSalaries] = useState([]);
 
-  // UI States
-  const [initialLoading, setInitialLoading] = useState(true); // NEW: Global loading
-  const [loading, setLoading] = useState(false); // For form submissions
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // NEW: Search state
 
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("");
 
-  /* ------------------------- FORM STATES ------------------------- */
   const [employeeForm, setEmployeeForm] = useState({
     name: "",
     email: "",
@@ -65,69 +59,491 @@ export default function CompanyDashboard({ user, onLogout }) {
     totalWorkingDays: 26,
   });
 
-  /* ------------------------- OPTIMIZED LOAD DATA -------------------------- */
+  // Attach styles once (EXACTLY AS IN CODE 1)
   useEffect(() => {
-    fetchAllData();
+    const id = "company-dashboard-styles-no-sidebar";
+    if (document.getElementById(id)) return;
+    const style = document.createElement("style");
+    style.id = id;
+    style.innerHTML = `
+      :root {
+        --sh-bg: #f5fafc;
+        --sh-bg-soft: #f0f7fb;
+        --sh-surface: #ffffff;
+        --sh-border-subtle: #e2edf4;
+        --sh-text-main: #0f172a;
+        --sh-text-soft: #6b7280;
+        --sh-primary: #06b6d4;
+        --sh-primary-deep: #0891b2;
+        --sh-accent-green: #10b981;
+        --sh-danger: #ef4444;
+        --sh-radius-lg: 24px;
+        --sh-radius-md: 16px;
+        --sh-radius-pill: 999px;
+        --sh-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+        --sh-shadow-subtle: 0 10px 30px rgba(15, 23, 42, 0.05);
+      }
+
+      .company-root {
+        min-height: 100vh;
+        background: radial-gradient(circle at 10% 0, #e0f7fb 0, #f9fdff 32%, #f5fafc 60%);
+      }
+
+      .company-shell {
+        max-width: 1180px;
+        margin: 90px auto 40px;
+        padding: 0 1.5rem 3rem;
+        width: 100%;
+      }
+
+      .company-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.2fr);
+        gap: 1.4rem;
+        margin-bottom: 1.7rem;
+      }
+      @media (max-width: 900px) {
+        .company-hero {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .company-shell {
+          margin-top: 82px;
+        }
+      }
+
+      .hero-main-card {
+        border-radius: 26px;
+        background: linear-gradient(135deg, #0f172a, #020617);
+        color: #e5faff;
+        padding: 1.2rem 1.4rem 1.3rem;
+        box-shadow: 0 28px 60px rgba(15,23,42,0.55);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-main-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 0 0, rgba(56,189,248,0.22), transparent 55%),
+                    radial-gradient(circle at 100% 100%, rgba(45,212,191,0.22), transparent 60%);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+      .hero-main-inner {
+        position: relative;
+        z-index: 1;
+      }
+      .hero-title {
+        font-size: 1.65rem;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+      .hero-subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #bfdbfe;
+      }
+
+      .hero-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.8rem;
+        margin-bottom: 0.9rem;
+      }
+      .hero-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.7);
+        padding: 0.26rem 0.7rem;
+        font-size: 0.78rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: rgba(15,23,42,0.7);
+      }
+
+      .hero-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        margin-top: 0.6rem;
+      }
+      .hero-footer-left {
+        font-size: 0.78rem;
+        color: #cbd5f5;
+      }
+      .hero-footer-right {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .sh-btn-pill {
+        border-radius: var(--sh-radius-pill);
+        padding: 0.42rem 0.95rem;
+        font-size: 0.8rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.32rem;
+        white-space: nowrap;
+        transition: all 0.18s ease;
+      }
+      .sh-btn-primary {
+        background: linear-gradient(135deg, var(--sh-primary), var(--sh-primary-deep));
+        color: #ffffff;
+        box-shadow: 0 10px 24px rgba(8,145,178,0.3);
+      }
+      .sh-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 32px rgba(8,145,178,0.55);
+      }
+      .sh-btn-outline-light {
+        background: rgba(15,23,42,0.7);
+        border-color: rgba(148,163,184,0.7);
+        color: #e5f3ff;
+      }
+      .sh-btn-outline-light:hover {
+        background: rgba(15,23,42,1);
+      }
+
+      .hero-pulse-pill {
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        background: rgba(22, 163, 74, 0.16);
+        border: 1px solid rgba(34,197,94,0.45);
+        font-size: 0.78rem;
+        color: #bbf7d0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .hero-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 0 4px rgba(34,197,94,0.4);
+      }
+
+      .hero-stats-card {
+        border-radius: 24px;
+        background: #ffffff;
+        border: 1px solid rgba(226,237,244,0.95);
+        box-shadow: var(--sh-shadow-subtle);
+        padding: 1rem 1.05rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+      .hero-stats-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .hero-stats-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--sh-text-main);
+      }
+      .hero-stats-subtitle {
+        font-size: 0.75rem;
+        color: var(--sh-text-soft);
+      }
+      .hero-pill {
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        background: var(--sh-bg-soft);
+        font-size: 0.75rem;
+        color: var(--sh-text-soft);
+      }
+      .hero-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.6rem;
+      }
+      .hero-stat {
+        background: #f9fafb;
+        border-radius: 16px;
+        padding: 0.5rem 0.55rem;
+      }
+      .hero-stat-label {
+        font-size: 0.75rem;
+        color: var(--sh-text-soft);
+        margin-bottom: 0.18rem;
+      }
+      .hero-stat-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--sh-text-main);
+      }
+
+      /* TABS like AdminDashboard */
+      .company-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 1rem;
+      }
+      .company-tab-btn {
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+        color: var(--sh-text-soft);
+        background: transparent;
+        transition: all 0.18s ease;
+      }
+      .company-tab-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .company-tab-btn:hover {
+        background: var(--sh-bg-soft);
+        color: var(--sh-text-main);
+      }
+      .company-tab-btn.active {
+        background: #ffffff;
+        border-color: rgba(148,163,184,0.6);
+        color: var(--sh-text-main);
+        box-shadow: 0 10px 26px rgba(15,23,42,0.17);
+      }
+
+      /* Card & table */
+      .sh-card {
+        border-radius: var(--sh-radius-lg);
+        background: #ffffff;
+        border: 1px solid rgba(226,237,244,0.9);
+        box-shadow: var(--sh-shadow-subtle);
+        padding: 1.1rem 1.15rem 1.25rem;
+        margin-bottom: 1.1rem;
+      }
+      .sh-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+      }
+      .sh-card-title {
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--sh-text-main);
+        margin: 0;
+      }
+
+      .sh-table-shell {
+        width: 100%;
+        overflow-x: auto;
+      }
+      .sh-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        min-width: 640px;
+      }
+      .sh-table thead {
+        background: var(--sh-bg-soft);
+      }
+      .sh-table th,
+      .sh-table td {
+        padding: 0.6rem 0.65rem;
+        text-align: left;
+      }
+      .sh-table th {
+        font-weight: 600;
+        font-size: 0.78rem;
+        color: var(--sh-text-soft);
+        border-bottom: 1px solid var(--sh-border-subtle);
+      }
+      .sh-table tbody tr:nth-child(even) {
+        background: #f9fafb;
+      }
+      .sh-table tbody tr:hover {
+        background: #eef7fb;
+      }
+
+      .sh-badge {
+        border-radius: var(--sh-radius-pill);
+        padding: 0.22rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+      .sh-badge-success {
+        background: #ecfdf5;
+        color: #15803d;
+      }
+      .sh-badge-danger {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+      .sh-badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .company-alert {
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.8rem;
+      }
+
+      /* Modals */
+      .sh-modal-layer {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.26);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 60;
+        padding: 1.2rem;
+      }
+      .sh-modal-card {
+        background: #ffffff;
+        border-radius: 26px;
+        border: 1px solid rgba(226,237,244,0.9);
+        box-shadow: 0 28px 60px rgba(15,23,42,0.32);
+        width: 100%;
+        max-width: 560px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .sh-modal-header {
+        padding: 1rem 1.4rem 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--sh-border-subtle);
+      }
+      .sh-modal-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--sh-text-main);
+      }
+      .sh-icon-btn {
+        border-radius: 999px;
+        width: 28px;
+        height: 28px;
+        border: none;
+        cursor: pointer;
+        background: #f9fafb;
+        font-size: 1.1rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sh-icon-btn:hover {
+        background: #e5eff8;
+      }
+      .sh-modal-body {
+        padding: 1rem 1.4rem 1.4rem;
+        overflow-y: auto;
+      }
+
+      .sh-form-group {
+        margin-bottom: 0.75rem;
+      }
+      .sh-form-group label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--sh-text-soft);
+        margin-bottom: 0.25rem;
+      }
+      .sh-input,
+      .sh-select {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid var(--sh-border-subtle);
+        padding: 0.45rem 0.6rem;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease;
+      }
+      .sh-input:focus,
+      .sh-select:focus {
+        border-color: var(--sh-primary);
+        box-shadow: 0 0 0 1px rgba(6,182,212,0.2);
+      }
+      .sh-form-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      @media (max-width: 720px) {
+        .hero-main-card {
+          padding: 1rem 1rem 1.1rem;
+        }
+        .sh-card {
+          padding: 1rem;
+        }
+        .sh-table {
+          min-width: 520px;
+        }
+        .sh-form-row {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }, []);
 
-  const fetchAllData = async () => {
-    setInitialLoading(true);
-    try {
-      // Parallel Fetching: 4x faster than sequential
-      const [empRes, supRes, attRes, salRes] = await Promise.all([
-        companyAPI.getEmployees(),
-        companyAPI.getSupervisors(),
-        companyAPI.getAttendance(),
-        salaryAPI.getAllSalaries(),
-      ]);
+  /* LOAD DATA (Sequential as per Code 2) */
+  useEffect(() => {
+    loadEmployees();
+    loadSupervisors();
+    loadAttendance();
+    loadSalaries();
+  }, []);
 
-      setEmployees(empRes.data);
-      setSupervisors(supRes.data);
-      setAttendance(attRes.data);
-      setSalaries(salRes.data);
-    } catch (error) {
-      console.error("Error fetching dashboard data", error);
-      setMessage("Failed to load data. Please refresh.");
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  // Helper to reload individual sections after updates
-  const reloadEmployees = async () => {
+  const loadEmployees = async () => {
     const res = await companyAPI.getEmployees();
     setEmployees(res.data);
   };
-  const reloadSupervisors = async () => {
+
+  const loadSupervisors = async () => {
     const res = await companyAPI.getSupervisors();
     setSupervisors(res.data);
   };
-  const reloadSalaries = async () => {
+
+  const loadAttendance = async () => {
+    const res = await companyAPI.getAttendance();
+    setAttendance(res.data);
+  };
+
+  const loadSalaries = async () => {
     const res = await salaryAPI.getAllSalaries();
     setSalaries(res.data);
   };
 
-  /* ------------------------- FILTER LOGIC ------------------------- */
-  const getFilteredData = (data, fieldPath = "name") => {
-    if (!searchTerm) return data;
-    const lowerTerm = searchTerm.toLowerCase();
-    
-    return data.filter((item) => {
-      // Handles nested properties like 'employeeId.name'
-      const value = fieldPath.split('.').reduce((obj, key) => obj?.[key], item);
-      return String(value || "").toLowerCase().includes(lowerTerm);
-    });
-  };
-
-  /* ------------------------- ACTIONS ---------------------------- */
+  /* ACTIONS */
   const handlePromote = async (id) => {
     if (!window.confirm("Promote this employee?")) return;
     setLoading(true);
     try {
       await companyAPI.promoteEmployee(id);
       setMessage("Employee promoted successfully");
-      reloadEmployees();
-      reloadSupervisors();
+      loadEmployees();
+      loadSupervisors();
     } finally {
       setLoading(false);
     }
@@ -143,198 +559,150 @@ export default function CompanyDashboard({ user, onLogout }) {
     setLoading(true);
 
     const form = { ...employeeForm };
-    // NEW: Safe Math (handles empty strings or undefined)
-    const basic = Number(form.salaryStructure.basicSalary) || 0;
-    const hra = Number(form.salaryStructure.hra) || 0;
-    const allow = Number(form.salaryStructure.allowances) || 0;
+    form.salaryStructure.grossSalary =
+      Number(form.salaryStructure.basicSalary) +
+      Number(form.salaryStructure.hra) +
+      Number(form.salaryStructure.allowances);
 
-    form.salaryStructure.grossSalary = basic + hra + allow;
-
-    try {
-      await companyAPI.registerEmployee(form);
-      setMessage("Employee added successfully");
-      setShowModal(false);
-      reloadEmployees();
-      // Reset form (optional)
-      setEmployeeForm({ ...employeeForm, name: "", email: "", password: "", phone: "" });
-    } catch (err) {
-        console.error(err);
-        setMessage("Error adding employee");
-    } finally {
-      setLoading(false);
-    }
+    await companyAPI.registerEmployee(form);
+    setMessage("Employee added successfully");
+    setShowModal(false);
+    loadEmployees();
+    setLoading(false);
   };
 
   const handleSupervisorSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-        await companyAPI.registerSupervisor(supervisorForm);
-        setMessage("Supervisor added successfully");
-        setShowModal(false);
-        reloadSupervisors();
-    } finally {
-        setLoading(false);
-    }
+    await companyAPI.registerSupervisor(supervisorForm);
+    setMessage("Supervisor added successfully");
+    setShowModal(false);
+    loadSupervisors();
   };
 
   const handleGenerateSalary = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-        await salaryAPI.generateSalary(salaryForm);
-        setMessage("Salary generated successfully");
-        setShowModal(false);
-        reloadSalaries();
-    } finally {
-        setLoading(false);
-    }
+    await salaryAPI.generateSalary(salaryForm);
+    setMessage("Salary generated successfully");
+    setShowModal(false);
+    loadSalaries();
   };
 
-  /* ------------------------- SIDEBAR MENU ------------------------ */
-  const menu = [
+  const tabs = [
     { key: "employees", label: "Employees", icon: Users },
     { key: "supervisors", label: "Supervisors", icon: UserPlus },
     { key: "attendance", label: "Attendance", icon: ClipboardList },
     { key: "salary", label: "Salary", icon: Wallet },
   ];
 
-  /* ====================================================================
-      RENDER
-   ==================================================================== */
-  return (
-    <div className="min-h-screen bg-gray-100">
+  /* * REMOVED: Dashboard Stats (PresentToday, totalEmployees, etc.)
+   * to align with Code 2's specific feature set.
+   */
 
-      {/* -------------- TOP FULL-WIDTH NAVBAR ---------------- */}
+  return (
+    <div className="company-root">
       <Navbar user={user} onLogout={onLogout} />
 
-      <div className="flex">
+      <div className="company-shell">
+        
+        {/* HERO SECTION - Simplified (Right Stats Card Removed) */}
+        {/* Inline style used to handle grid removal without changing CSS file */}
+        <section className="company-hero" style={{ display: "block" }}>
+          {/* Main Title Card */}
+          <div className="hero-main-card">
+            <div className="hero-main-inner">
+              <div className="hero-pulse-pill">
+                <span className="hero-dot" />
+                StaffHub Dashboard
+              </div>
 
-        {/* -------------------- SIDEBAR -------------------- */}
-        <aside
-          className={`fixed top-[82px] left-0 h-[calc(100vh-64px)] w-72 bg-white border-r shadow-md z-50
-            transition-transform duration-300
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-          `}
-        >
-          <div className="p-5 border-b flex justify-between items-center">
-            <h2 className="text-xl font-bold">StaffHub</h2>
-            <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+              <h1 className="hero-title">
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              </h1>
+              <p className="hero-subtitle">
+                Manage your company data efficiently.
+              </p>
 
-          <nav className="p-4 space-y-2">
-            {menu.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => {
-                    setActiveTab(key);
-                    setSearchTerm(""); // Reset search on tab switch
-                    setSidebarOpen(false); // Close mobile sidebar
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                  ${
-                    activeTab === key
-                      ? "bg-teal-600 text-white shadow"
-                      : "hover:bg-gray-100 text-gray-700"
-                  }`}
-              >
-                <Icon className="w-5 h-5" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* -------------------- CONTENT AREA -------------------- */}
-        <main className="flex-1 lg:ml-72 px-6 py-6">
-
-          {/* Mobile Sidebar Button */}
-          <button
-            className="lg:hidden mb-4 bg-white p-2 rounded-lg shadow"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu />
-          </button>
-
-          {/* Page Header + Search Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
-              {activeTab.toUpperCase()}
-            </h1>
-
-            <div className="flex items-center gap-3 w-full md:w-auto">
-                 {/* SEARCH BAR */}
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input 
-                        type="text" 
-                        placeholder="Search..." 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-                    />
+              {/* Removed detailed count chips to match Code 2 functionality */}
+              
+              <div className="hero-footer">
+                <div className="hero-footer-left">
+                  {/* Footer left text removed or simplified */}
                 </div>
-                
-                {message && (
-                <div className="hidden md:block px-4 py-2 bg-teal-100 text-teal-700 rounded-lg shadow text-sm">
-                    {message}
+                <div className="hero-footer-right">
+                  <button
+                    type="button"
+                    className="sh-btn-pill sh-btn-primary"
+                    onClick={() => openModal("employee")}
+                  >
+                    <Users size={14} />
+                    Add employee
+                  </button>
+                  <button
+                    type="button"
+                    className="sh-btn-pill sh-btn-outline-light"
+                    onClick={() => openModal("salary")}
+                  >
+                    <Wallet size={14} />
+                    Generate salary
+                  </button>
                 </div>
-                )}
+              </div>
             </div>
           </div>
           
-          {/* Mobile message only */}
-           {message && (
-              <div className="md:hidden mb-4 px-4 py-2 bg-teal-100 text-teal-700 rounded-lg shadow text-sm">
-                  {message}
-              </div>
-            )}
+          {/* REMOVED: Right side stats card (Total/Present/etc) */}
+        </section>
 
-          {/* -------- TAB CONTENT (With Loading & Filtering) -------- */}
-          {initialLoading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <Loader2 className="w-10 h-10 animate-spin mb-3 text-teal-600" />
-                <p>Loading dashboard data...</p>
-            </div>
-          ) : (
-            <>
-                {activeTab === "employees" && (
-                    <EmployeesTab
-                    employees={getFilteredData(employees, "name")}
-                    onAdd={() => openModal("employee")}
-                    onPromote={handlePromote}
-                    loading={loading}
-                    />
-                )}
+        {/* SUCCESS / INFO MESSAGE */}
+        {message && <div className="company-alert">{message}</div>}
 
-                {activeTab === "supervisors" && (
-                    <SupervisorsTab
-                    supervisors={getFilteredData(supervisors, "name")}
-                    onAdd={() => openModal("supervisor")}
-                    />
-                )}
+        {/* TABS */}
+        <div className="company-tabs">
+          {tabs.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={
+                "company-tab-btn " + (activeTab === key ? "active" : "")
+              }
+            >
+              <Icon />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
 
-                {activeTab === "attendance" && (
-                    <AttendanceTab 
-                        attendance={getFilteredData(attendance, "employeeId.name")} 
-                    />
-                )}
+        {/* TAB CONTENT */}
+        {activeTab === "employees" && (
+          <EmployeesTab
+            employees={employees}
+            onAdd={() => openModal("employee")}
+            onPromote={handlePromote}
+            loading={loading}
+          />
+        )}
 
-                {activeTab === "salary" && (
-                    <SalaryTab 
-                        salaries={getFilteredData(salaries, "employeeId.name")} 
-                        onAdd={() => openModal("salary")} 
-                    />
-                )}
-            </>
-          )}
+        {activeTab === "supervisors" && (
+          <SupervisorsTab
+            supervisors={supervisors}
+            onAdd={() => openModal("supervisor")}
+          />
+        )}
 
-        </main>
+        {activeTab === "attendance" && (
+          <AttendanceTab attendance={attendance} />
+        )}
+
+        {activeTab === "salary" && (
+          <SalaryTab
+            salaries={salaries}
+            onAdd={() => openModal("salary")}
+          />
+        )}
       </div>
 
-      {/* -------- MODALS (Keep existing logic) -------- */}
+      {/* MODALS */}
       {showModal && modalType === "employee" && (
         <EmployeeModal
           onClose={() => setShowModal(false)}
@@ -369,98 +737,95 @@ export default function CompanyDashboard({ user, onLogout }) {
   );
 }
 
-/* ============================================================================
-   TAB COMPONENTS (Unchanged, just receive filtered data now)
-============================================================================ */
+/* ============================= TAB COMPONENTS ============================= */
 
-function EmployeesTab({ employees, onAdd, onPromote, loading }) {
+function EmployeesTab({ employees, onAdd }) {
   return (
-    <Card title="Employees" buttonLabel="Add Employee" onAdd={onAdd}>
-      <Table
-        headers={["Name", "Email", "Phone", "Daily Salary","Start Date","End Date"]}
+    <ShCard title="Employees" buttonLabel="Add Employee" onAdd={onAdd}>
+      <ShTable
+        headers={[
+          "Name",
+          "Email",
+          "Phone",
+          "Daily Salary",
+          "Start Date",
+          "End Date",
+        ]}
       >
-        {employees.length === 0 ? (
-            <tr><td colSpan="6" className="p-4 text-center text-gray-500">No employees found.</td></tr>
-        ) : (
-            employees.map((e) => (
-            <tr key={e._id} className="hover:bg-gray-50 border-b last:border-0">
-                <td className="py-3 px-4">{e.name}</td>
-                <td className="px-4">{e.email}</td>
-                <td className="px-4">{e.phone}</td>
-                <td className="px-4">₹{e.dailySalary}</td>
-                <td className="px-4">{new Date(e.startDate).toLocaleDateString()}</td>
-                <td className="px-4">{e.endDate ? new Date(e.endDate).toLocaleDateString() : "-"}</td>
-            </tr>
-            ))
-        )}
-      </Table>
-    </Card>
+        {employees.map((e) => (
+          <tr key={e._id}>
+            <td>{e.name}</td>
+            <td>{e.email}</td>
+            <td>{e.phone}</td>
+            <td>₹{e.dailySalary}</td>
+            <td>{new Date(e.startDate).toLocaleDateString()}</td>
+            <td>
+              {e.endDate ? new Date(e.endDate).toLocaleDateString() : "-"}
+            </td>
+          </tr>
+        ))}
+      </ShTable>
+    </ShCard>
   );
 }
 
 function SupervisorsTab({ supervisors, onAdd }) {
   return (
-    <Card title="Supervisors" buttonLabel="Add Supervisor" onAdd={onAdd}>
-      <Table headers={["Name", "Email", "Phone", "Status"]}>
-        {supervisors.length === 0 ? (
-             <tr><td colSpan="4" className="p-4 text-center text-gray-500">No supervisors found.</td></tr>
-        ) : (
-            supervisors.map((s) => (
-            <tr key={s._id} className="hover:bg-gray-50 border-b last:border-0">
-                <td className="py-3 px-4">{s.name}</td>
-                <td className="px-4">{s.email}</td>
-                <td className="px-4">{s.phone}</td>
-                <td className="px-4">
-                <Badge type={s.isActive ? "success" : "danger"}>
-                    {s.isActive ? "Active" : "Inactive"}
-                </Badge>
-                </td>
-            </tr>
-            ))
-        )}
-      </Table>
-    </Card>
+    <ShCard title="Supervisors" buttonLabel="Add Supervisor" onAdd={onAdd}>
+      <ShTable headers={["Name", "Email", "Phone", "Status"]}>
+        {supervisors.map((s) => (
+          <tr key={s._id}>
+            <td>{s.name}</td>
+            <td>{s.email}</td>
+            <td>{s.phone}</td>
+            <td>
+              <ShBadge type={s.isActive ? "success" : "danger"}>
+                {s.isActive ? "Active" : "Inactive"}
+              </ShBadge>
+            </td>
+          </tr>
+        ))}
+      </ShTable>
+    </ShCard>
   );
 }
 
 function AttendanceTab({ attendance }) {
   return (
-    <Card title="Attendance Records">
-      <Table headers={["Employee", "Date", "Status", "Supervisor", "Remarks"]}>
-        {attendance.length === 0 ? (
-             <tr><td colSpan="5" className="p-4 text-center text-gray-500">No attendance records found.</td></tr>
-        ) : (
-            attendance.map((att) => (
-            <tr key={att._id} className="hover:bg-gray-50 border-b last:border-0">
-                <td className="py-3 px-4">{att.employeeId?.name || "Unknown"}</td>
-                <td className="px-4">{new Date(att.date).toLocaleDateString()}</td>
-                <td className="px-4">
-                <Badge
-                    type={
-                    att.status === "Present"
-                        ? "success"
-                        : att.status === "Absent"
-                        ? "danger"
-                        : "warning"
-                    }
-                >
-                    {att.status}
-                </Badge>
-                </td>
-                <td className="px-4">{att.supervisorId?.name || "System"}</td>
-                <td className="px-4">{att.remarks || "-"}</td>
-            </tr>
-            ))
-        )}
-      </Table>
-    </Card>
+    <ShCard title="Attendance Records">
+      <ShTable
+        headers={["Employee", "Date", "Status", "Supervisor", "Remarks"]}
+      >
+        {attendance.map((att) => (
+          <tr key={att._id}>
+            <td>{att.employeeId?.name}</td>
+            <td>{new Date(att.date).toLocaleDateString()}</td>
+            <td>
+              <ShBadge
+                type={
+                  att.status === "Present"
+                    ? "success"
+                    : att.status === "Absent"
+                    ? "danger"
+                    : "warning"
+                }
+              >
+                {att.status}
+              </ShBadge>
+            </td>
+            <td>{att.supervisorId?.name}</td>
+            <td>{att.remarks || "-"}</td>
+          </tr>
+        ))}
+      </ShTable>
+    </ShCard>
   );
 }
 
 function SalaryTab({ salaries, onAdd }) {
   return (
-    <Card title="Salary Records" buttonLabel="Generate Salary" onAdd={onAdd}>
-      <Table
+    <ShCard title="Salary Records" buttonLabel="Generate Salary" onAdd={onAdd}>
+      <ShTable
         headers={[
           "Employee",
           "Month/Year",
@@ -470,128 +835,190 @@ function SalaryTab({ salaries, onAdd }) {
           "Status",
         ]}
       >
-        {salaries.length === 0 ? (
-             <tr><td colSpan="6" className="p-4 text-center text-gray-500">No salary records found.</td></tr>
-        ) : (
-            salaries.map((sal) => (
-            <tr key={sal._id} className="hover:bg-gray-50 border-b last:border-0">
-                <td className="py-3 px-4">{sal.employeeId?.name || "Unknown"}</td>
-                <td className="px-4">
-                {sal.month}/{sal.year}
-                </td>
-                <td className="px-4">{sal.daysWorked}</td>
-                <td className="px-4">₹{sal.grossSalary}</td>
-                <td className="px-4">₹{sal.netSalary.toFixed(2)}</td>
-                <td className="px-4">
-                <Badge type={sal.status === "generated" ? "success" : "warning"}>
-                    {sal.status}
-                </Badge>
-                </td>
-            </tr>
-            ))
-        )}
-      </Table>
-    </Card>
+        {salaries.map((sal) => (
+          <tr key={sal._id}>
+            <td>{sal.employeeId?.name}</td>
+            <td>
+              {sal.month}/{sal.year}
+            </td>
+            <td>{sal.daysWorked}</td>
+            <td>₹{sal.grossSalary}</td>
+            <td>₹{sal.netSalary.toFixed(2)}</td>
+            <td>
+              <ShBadge
+                type={sal.status === "generated" ? "success" : "warning"}
+              >
+                {sal.status}
+              </ShBadge>
+            </td>
+          </tr>
+        ))}
+      </ShTable>
+    </ShCard>
   );
 }
 
-/* ============================================================================
-   REUSABLE COMPONENTS
-============================================================================ */
+/* ========================= REUSABLE COMPONENTS ========================= */
 
-function Card({ title, buttonLabel, onAdd, children }) {
+function ShCard({ title, buttonLabel, onAdd, children }) {
   return (
-    <div className="bg-white border rounded-xl shadow-sm p-5 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+    <section className="sh-card">
+      <div className="sh-card-header">
+        <h3 className="sh-card-title">{title}</h3>
         {buttonLabel && (
           <button
+            type="button"
+            className="sh-btn-pill sh-btn-primary"
             onClick={onAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm text-sm font-medium"
           >
-            <UserPlus className="w-4 h-4" />
             {buttonLabel}
           </button>
         )}
       </div>
       {children}
-    </div>
+    </section>
   );
 }
 
-function Table({ headers, children }) {
+function ShTable({ headers, children }) {
   return (
-    <div className="overflow-x-auto border rounded-lg">
-      <table className="w-full text-left border-collapse">
-        <thead className="bg-gray-50">
+    <div className="sh-table-shell">
+      <table className="sh-table">
+        <thead>
           <tr>
             {headers.map((h) => (
-              <th key={h} className="px-4 py-3 border-b font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                {h}
-              </th>
+              <th key={h}>{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">{children}</tbody>
+        <tbody>{children}</tbody>
       </table>
     </div>
   );
 }
 
-function Badge({ children, type }) {
-  const colors = {
-    success: "bg-green-100 text-green-800 border border-green-200",
-    danger: "bg-red-100 text-red-800 border border-red-200",
-    warning: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-  };
-
-  return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[type]}`}>
-      {children}
-    </span>
-  );
+function ShBadge({ children, type }) {
+  const cls =
+    type === "success"
+      ? "sh-badge sh-badge-success"
+      : type === "danger"
+      ? "sh-badge sh-badge-danger"
+      : "sh-badge sh-badge-warning";
+  return <span className={cls}>{children}</span>;
 }
 
-/* ============================================================================
-   MODALS (Unchanged logic, kept clean)
-============================================================================ */
+/* =============================== MODALS =============================== */
 
 function ModalWrapper({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-[60] p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 transform transition-all scale-100">
-        <div className="flex justify-between items-center mb-5 border-b pb-3">
-          <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-          <button 
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" 
+    <div className="sh-modal-layer">
+      <div className="sh-modal-card">
+        <div className="sh-modal-header">
+          <h3>{title}</h3>
+          <button
+            className="sh-icon-btn"
+            type="button"
             onClick={onClose}
           >
-            <X className="w-5 h-5" />
+            ×
           </button>
         </div>
-        {children}
+        <div className="sh-modal-body">{children}</div>
       </div>
     </div>
   );
 }
 
-function EmployeeModal({ onClose, employeeForm, setEmployeeForm, onSubmit, loading }) {
+function EmployeeModal({
+  onClose,
+  employeeForm,
+  setEmployeeForm,
+  onSubmit,
+  loading,
+}) {
   return (
     <ModalWrapper title="Add Employee" onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <Input label="Name" value={employeeForm.name} onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })} />
-        <Input label="Email" value={employeeForm.email} onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })} />
-        <Input label="Password" type="password" value={employeeForm.password} onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })} />
-        <Input label="Phone" value={employeeForm.phone} onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })} />
-        
-        <div className="grid grid-cols-2 gap-4">
-            <Input label="Basic Salary" type="number" value={employeeForm.salaryStructure.basicSalary} onChange={(e) => setEmployeeForm({ ...employeeForm, salaryStructure: { ...employeeForm.salaryStructure, basicSalary: e.target.value } })} />
-            <Input label="HRA" type="number" value={employeeForm.salaryStructure.hra} onChange={(e) => setEmployeeForm({ ...employeeForm, salaryStructure: { ...employeeForm.salaryStructure, hra: e.target.value } })} />
-        </div>
-        <Input label="Allowances" type="number" value={employeeForm.salaryStructure.allowances} onChange={(e) => setEmployeeForm({ ...employeeForm, salaryStructure: { ...employeeForm.salaryStructure, allowances: e.target.value } })} />
+      <form onSubmit={onSubmit}>
+        <ShInput
+          label="Name"
+          value={employeeForm.name}
+          onChange={(e) =>
+            setEmployeeForm({ ...employeeForm, name: e.target.value })
+          }
+        />
+        <ShInput
+          label="Email"
+          value={employeeForm.email}
+          onChange={(e) =>
+            setEmployeeForm({ ...employeeForm, email: e.target.value })
+          }
+        />
+        <ShInput
+          label="Password"
+          type="password"
+          value={employeeForm.password}
+          onChange={(e) =>
+            setEmployeeForm({ ...employeeForm, password: e.target.value })
+          }
+        />
+        <ShInput
+          label="Phone"
+          value={employeeForm.phone}
+          onChange={(e) =>
+            setEmployeeForm({ ...employeeForm, phone: e.target.value })
+          }
+        />
 
-        <button className="w-full py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors flex justify-center items-center gap-2">
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+        <div className="sh-form-row">
+          <ShInput
+            label="Basic Salary"
+            type="number"
+            value={employeeForm.salaryStructure.basicSalary}
+            onChange={(e) =>
+              setEmployeeForm({
+                ...employeeForm,
+                salaryStructure: {
+                  ...employeeForm.salaryStructure,
+                  basicSalary: e.target.value,
+                },
+              })
+            }
+          />
+          <ShInput
+            label="HRA"
+            type="number"
+            value={employeeForm.salaryStructure.hra}
+            onChange={(e) =>
+              setEmployeeForm({
+                ...employeeForm,
+                salaryStructure: {
+                  ...employeeForm.salaryStructure,
+                  hra: e.target.value,
+                },
+              })
+            }
+          />
+        </div>
+
+        <ShInput
+          label="Allowances"
+          type="number"
+          value={employeeForm.salaryStructure.allowances}
+          onChange={(e) =>
+            setEmployeeForm({
+              ...employeeForm,
+              salaryStructure: {
+                ...employeeForm.salaryStructure,
+                allowances: e.target.value,
+              },
+            })
+          }
+        />
+
+        <button
+          type="submit"
+          className="sh-btn-pill sh-btn-primary sh-btn-full"
+        >
           {loading ? "Adding..." : "Add Employee"}
         </button>
       </form>
@@ -599,17 +1026,53 @@ function EmployeeModal({ onClose, employeeForm, setEmployeeForm, onSubmit, loadi
   );
 }
 
-function SupervisorModal({ onClose, supervisorForm, setSupervisorForm, onSubmit, loading }) {
+function SupervisorModal({
+  onClose,
+  supervisorForm,
+  setSupervisorForm,
+  onSubmit,
+  loading,
+}) {
   return (
     <ModalWrapper title="Add Supervisor" onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <Input label="Name" value={supervisorForm.name} onChange={(e) => setSupervisorForm({ ...supervisorForm, name: e.target.value })} />
-        <Input label="Email" value={supervisorForm.email} onChange={(e) => setSupervisorForm({ ...supervisorForm, email: e.target.value })} />
-        <Input label="Password" type="password" value={supervisorForm.password} onChange={(e) => setSupervisorForm({ ...supervisorForm, password: e.target.value })} />
-        <Input label="Phone" value={supervisorForm.phone} onChange={(e) => setSupervisorForm({ ...supervisorForm, phone: e.target.value })} />
+      <form onSubmit={onSubmit}>
+        <ShInput
+          label="Name"
+          value={supervisorForm.name}
+          onChange={(e) =>
+            setSupervisorForm({ ...supervisorForm, name: e.target.value })
+          }
+        />
+        <ShInput
+          label="Email"
+          value={supervisorForm.email}
+          onChange={(e) =>
+            setSupervisorForm({ ...supervisorForm, email: e.target.value })
+          }
+        />
+        <ShInput
+          label="Password"
+          type="password"
+          value={supervisorForm.password}
+          onChange={(e) =>
+            setSupervisorForm({
+              ...supervisorForm,
+              password: e.target.value,
+            })
+          }
+        />
+        <ShInput
+          label="Phone"
+          value={supervisorForm.phone}
+          onChange={(e) =>
+            setSupervisorForm({ ...supervisorForm, phone: e.target.value })
+          }
+        />
 
-        <button className="w-full py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors flex justify-center items-center gap-2">
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+        <button
+          type="submit"
+          className="sh-btn-pill sh-btn-primary sh-btn-full"
+        >
           {loading ? "Adding..." : "Add Supervisor"}
         </button>
       </form>
@@ -617,32 +1080,70 @@ function SupervisorModal({ onClose, supervisorForm, setSupervisorForm, onSubmit,
   );
 }
 
-function SalaryModal({ onClose, salaryForm, setSalaryForm, employees, onSubmit, loading }) {
+function SalaryModal({
+  onClose,
+  salaryForm,
+  setSalaryForm,
+  employees,
+  onSubmit,
+  loading,
+}) {
   return (
     <ModalWrapper title="Generate Salary" onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+      <form onSubmit={onSubmit}>
+        <div className="sh-form-group">
+          <label>Employee</label>
           <select
+            className="sh-select"
             value={salaryForm.employeeId}
-            onChange={(e) => setSalaryForm({ ...salaryForm, employeeId: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+            onChange={(e) =>
+              setSalaryForm({ ...salaryForm, employeeId: e.target.value })
+            }
           >
             <option value="">Select Employee</option>
             {employees.map((e) => (
-              <option key={e._id} value={e._id}>{e.name}</option>
+              <option key={e._id} value={e._id}>
+                {e.name}
+              </option>
             ))}
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-            <Input label="Month" type="number" value={salaryForm.month} onChange={(e) => setSalaryForm({ ...salaryForm, month: e.target.value })} />
-            <Input label="Year" type="number" value={salaryForm.year} onChange={(e) => setSalaryForm({ ...salaryForm, year: e.target.value })} />
+        <div className="sh-form-row">
+          <ShInput
+            label="Month"
+            type="number"
+            value={salaryForm.month}
+            onChange={(e) =>
+              setSalaryForm({ ...salaryForm, month: e.target.value })
+            }
+          />
+          <ShInput
+            label="Year"
+            type="number"
+            value={salaryForm.year}
+            onChange={(e) =>
+              setSalaryForm({ ...salaryForm, year: e.target.value })
+            }
+          />
         </div>
-        <Input label="Total Working Days" type="number" value={salaryForm.totalWorkingDays} onChange={(e) => setSalaryForm({ ...salaryForm, totalWorkingDays: e.target.value })} />
 
-        <button className="w-full py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors flex justify-center items-center gap-2">
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+        <ShInput
+          label="Total Working Days"
+          type="number"
+          value={salaryForm.totalWorkingDays}
+          onChange={(e) =>
+            setSalaryForm({
+              ...salaryForm,
+              totalWorkingDays: e.target.value,
+            })
+          }
+        />
+
+        <button
+          type="submit"
+          className="sh-btn-pill sh-btn-primary sh-btn-full"
+        >
           {loading ? "Generating..." : "Generate Salary"}
         </button>
       </form>
@@ -650,16 +1151,17 @@ function SalaryModal({ onClose, salaryForm, setSalaryForm, employees, onSubmit, 
   );
 }
 
-/* -------------------- Input Component -------------------- */
-function Input({ label, value, onChange, type = "text" }) {
+/* INPUT */
+
+function ShInput({ label, value, onChange, type = "text" }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="sh-form-group">
+      <label>{label}</label>
       <input
         type={type}
         value={value}
         onChange={onChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+        className="sh-input"
       />
     </div>
   );
