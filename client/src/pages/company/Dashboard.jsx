@@ -145,7 +145,7 @@ export default function CompanyDashboard({ user, onLogout }) {
     { key: "employees", label: "Employees", icon: Users },
     { key: "supervisors", label: "Supervisors", icon: UserPlus },
     { key: "attendance", label: "Attendance", icon: ClipboardList },
-    { key: "salary", label: "Salary", icon: Wallet },
+   
   ];
 
   /* ====================================================================
