@@ -31,6 +31,9 @@ const assignmentSchema = new mongoose.Schema({
   notes: {
     type: String
   },
+  description: {
+    type: String
+  },
   assignedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

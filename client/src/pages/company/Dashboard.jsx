@@ -49,6 +49,8 @@ export default function CompanyDashboard({ user, onLogout }) {
     email: "",
     password: "",
     phone: "",
+    aadhaarPhoto: null,
+    panPhoto: null,
   });
 
   console.log(employees)
@@ -126,7 +128,15 @@ export default function CompanyDashboard({ user, onLogout }) {
 
   const handleSupervisorSubmit = async (e) => {
     e.preventDefault();
-    await companyAPI.registerSupervisor(supervisorForm);
+    
+    const formData = new FormData();
+    Object.keys(supervisorForm).forEach(key => {
+      if (supervisorForm[key]) {
+        formData.append(key, supervisorForm[key]);
+      }
+    });
+
+    await companyAPI.registerSupervisor(formData);
     setMessage("Supervisor added successfully");
     setShowModal(false);
     loadSupervisors();
@@ -562,6 +572,26 @@ function SupervisorModal({
         <Input label="Password" type="password" value={supervisorForm.password} onChange={(e) => setSupervisorForm({ ...supervisorForm, password: e.target.value })} />
 
         <Input label="Phone" value={supervisorForm.phone} onChange={(e) => setSupervisorForm({ ...supervisorForm, phone: e.target.value })} />
+
+        <div>
+          <label className="font-medium">Aadhaar Photo</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSupervisorForm({ ...supervisorForm, aadhaarPhoto: e.target.files[0] })}
+            className="w-full mt-1 px-3 py-2 border rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label className="font-medium">PAN Photo</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSupervisorForm({ ...supervisorForm, panPhoto: e.target.files[0] })}
+            className="w-full mt-1 px-3 py-2 border rounded-lg"
+          />
+        </div>
 
         <button className="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
           {loading ? "Adding..." : "Add Supervisor"}

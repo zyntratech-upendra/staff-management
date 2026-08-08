@@ -527,6 +527,30 @@ function SupervisorProfile({ user, onLogout }) {
                   <span className="profile-label">Role</span>
                   <span className="profile-value">{profile.role}</span>
                 </div>
+                <div className="profile-field">
+                  <span className="profile-label">Aadhaar Photo</span>
+                  <span className="profile-value">
+                    {profile.aadhaarPhoto ? (
+                      <div className="mt-2">
+                        <a href={profile.aadhaarPhoto} target="_blank" rel="noopener noreferrer">
+                          <img src={profile.aadhaarPhoto} alt="Aadhaar" className="w-32 h-20 object-cover rounded shadow" />
+                        </a>
+                      </div>
+                    ) : 'Not uploaded'}
+                  </span>
+                </div>
+                <div className="profile-field">
+                  <span className="profile-label">PAN Photo</span>
+                  <span className="profile-value">
+                    {profile.panPhoto ? (
+                      <div className="mt-2">
+                        <a href={profile.panPhoto} target="_blank" rel="noopener noreferrer">
+                          <img src={profile.panPhoto} alt="PAN" className="w-32 h-20 object-cover rounded shadow" />
+                        </a>
+                      </div>
+                    ) : 'Not uploaded'}
+                  </span>
+                </div>
               </div>
             )}
           </section>

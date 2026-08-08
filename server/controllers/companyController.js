@@ -7,20 +7,10 @@ exports.getAssignedEmployees = async (req, res) => {
     const companyId = req.user.companyId;
     const now = new Date();
 
-    const assignments = await Assignment.find({
-      companyId,
-      status: 'active',
-      startDate: { $lte: now },
-      endDate: { $gte: now }
-    }).populate('employeeId', 'name email phone aadhaar pan salaryStructure');
-
-    const employees = assignments.map(assignment => ({
-      ...assignment.employeeId.toObject(),
-      assignmentId: assignment._id,
-      dailySalary: assignment.dailySalary,
-      startDate: assignment.startDate,
-      endDate: assignment.endDate
-    }));
+    const employees = await User.find({
+      role: 'employee',
+      companyId
+    }).select('-password').lean();
 
     res.json(employees);
   } catch (error) {
@@ -79,6 +69,18 @@ exports.registerSupervisor = async (req, res) => {
 
     const { name, email, password, phone } = req.body;
 
+    let aadhaarPhoto = '';
+    let panPhoto = '';
+
+    if (req.files) {
+      if (req.files.aadhaarPhoto && req.files.aadhaarPhoto[0]) {
+        aadhaarPhoto = req.files.aadhaarPhoto[0].path;
+      }
+      if (req.files.panPhoto && req.files.panPhoto[0]) {
+        panPhoto = req.files.panPhoto[0].path;
+      }
+    }
+
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already registered' });
 
@@ -88,6 +90,8 @@ exports.registerSupervisor = async (req, res) => {
       email,
       password,
       phone,
+      aadhaarPhoto,
+      panPhoto,
       companyId
     });
 

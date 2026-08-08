@@ -4,7 +4,7 @@ const Company = require('../models/Company');
 
 exports.createAssignment = async (req, res) => {
   try {
-    const { employeeId, companyId, startDate, endDate, dailySalary, notes } = req.body;
+    const { employeeId, companyId, startDate, endDate, dailySalary, notes, description } = req.body;
     console.log(req.body);
 
     const employee = await User.findOne({ _id: employeeId, role: 'employee' });
@@ -45,6 +45,7 @@ exports.createAssignment = async (req, res) => {
       endDate: end,
       dailySalary,
       notes,
+      description,
       assignedBy: req.userId,
       status: 'active'
     });
@@ -113,7 +114,7 @@ exports.getAssignmentById = async (req, res) => {
 exports.updateAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const { startDate, endDate, dailySalary, notes, status } = req.body;
+    const { startDate, endDate, dailySalary, notes, description, status } = req.body;
 
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
@@ -124,6 +125,7 @@ exports.updateAssignment = async (req, res) => {
     if (endDate) assignment.endDate = new Date(endDate);
     if (dailySalary) assignment.dailySalary = dailySalary;
     if (notes !== undefined) assignment.notes = notes;
+    if (description !== undefined) assignment.description = description;
     if (status) assignment.status = status;
 
     assignment.updatedAt = Date.now();

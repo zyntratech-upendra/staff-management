@@ -43,7 +43,9 @@ function AdminDashboard({ user, onLogout }) {
     phone: '',
     address: '',
     aadhaar: '',
-    pan: ''
+    pan: '',
+    aadhaarPhoto: null,
+    panPhoto: null
   });
 
   const [supervisorForm, setSupervisorForm] = useState({
@@ -52,7 +54,9 @@ function AdminDashboard({ user, onLogout }) {
     password: '',
     phone: '',
     address: '',
-    companyId: ''
+    companyId: '',
+    aadhaarPhoto: null,
+    panPhoto: null
   });
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [reassignCompanyId, setReassignCompanyId] = useState('');
@@ -63,7 +67,8 @@ function AdminDashboard({ user, onLogout }) {
     startDate: '',
     endDate: '',
     dailySalary: '',
-    notes: ''
+    notes: '',
+    description: ''
   });
 
   const [salaryForm, setSalaryForm] = useState({
@@ -232,7 +237,14 @@ function AdminDashboard({ user, onLogout }) {
     setMessage('');
 
     try {
-      await adminAPI.registerEmployee(employeeForm);
+      const formData = new FormData();
+      Object.keys(employeeForm).forEach(key => {
+        if (employeeForm[key]) {
+          formData.append(key, employeeForm[key]);
+        }
+      });
+
+      await adminAPI.registerEmployee(formData);
       setMessage('Employee registered successfully');
       setShowModal(false);
       setEmployeeForm({
@@ -242,7 +254,9 @@ function AdminDashboard({ user, onLogout }) {
         phone: '',
         address: '',
         aadhaar: '',
-        pan: ''
+        pan: '',
+        aadhaarPhoto: null,
+        panPhoto: null
       });
       loadEmployees();
       loadStats();
@@ -261,7 +275,14 @@ function AdminDashboard({ user, onLogout }) {
     setMessage('');
 
     try {
-      await adminAPI.registerSupervisor(supervisorForm);
+      const formData = new FormData();
+      Object.keys(supervisorForm).forEach(key => {
+        if (supervisorForm[key]) {
+          formData.append(key, supervisorForm[key]);
+        }
+      });
+
+      await adminAPI.registerSupervisor(formData);
       setMessage('Supervisor registered successfully');
       setShowModal(false);
       setSupervisorForm({
@@ -270,7 +291,9 @@ function AdminDashboard({ user, onLogout }) {
         password: '',
         phone: '',
         address: '',
-        companyId: ''
+        companyId: '',
+        aadhaarPhoto: null,
+        panPhoto: null
       });
       loadSupervisors();
       loadStats();
@@ -341,7 +364,8 @@ function AdminDashboard({ user, onLogout }) {
         startDate: '',
         endDate: '',
         dailySalary: '',
-        notes: ''
+        notes: '',
+        description: ''
       });
       loadAssignments();
       loadStats();
@@ -1119,6 +1143,20 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
 
                   <div className="form-group">
+                    <label>Aadhaar Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setEmployeeForm({
+                          ...employeeForm,
+                          aadhaarPhoto: e.target.files[0]
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="form-group">
                     <label>PAN</label>
                     <input
                       type="text"
@@ -1127,6 +1165,20 @@ function AdminDashboard({ user, onLogout }) {
                         setEmployeeForm({
                           ...employeeForm,
                           pan: e.target.value
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>PAN Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setEmployeeForm({
+                          ...employeeForm,
+                          panPhoto: e.target.files[0]
                         })
                       }
                     />
@@ -1230,6 +1282,34 @@ function AdminDashboard({ user, onLogout }) {
                         setSupervisorForm({
                           ...supervisorForm,
                           address: e.target.value
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Aadhaar Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setSupervisorForm({
+                          ...supervisorForm,
+                          aadhaarPhoto: e.target.files[0]
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>PAN Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setSupervisorForm({
+                          ...supervisorForm,
+                          panPhoto: e.target.files[0]
                         })
                       }
                     />
@@ -1371,6 +1451,19 @@ function AdminDashboard({ user, onLogout }) {
                         })
                       }
                       required
+                    />
+                  </div>
+
+                  <div className="form-group form-group-full">
+                    <label>Description</label>
+                    <textarea
+                      value={assignmentForm.description}
+                      onChange={(e) =>
+                        setAssignmentForm({
+                          ...assignmentForm,
+                          description: e.target.value
+                        })
+                      }
                     />
                   </div>
 

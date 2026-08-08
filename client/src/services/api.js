@@ -47,14 +47,15 @@ export const adminAPI = {
   toggleCompanyStatus: (companyId) => api.patch(`/admin/companies/${companyId}/toggle`),
   resetCompanyPassword: (companyId, data) => api.post(`/admin/companies/${companyId}/reset-password`, data),
   getStats: () => api.get('/admin/stats'),
-  registerEmployee: (data) => api.post('/admin/employees', data),
+  registerEmployee: (data) => api.post('/admin/employees', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getEmployees: () => api.get('/admin/employees'),
   updateEmployee: (employeeId, data) => api.put(`/admin/employees/${employeeId}`, data),
-  registerSupervisor: (data) => api.post('/admin/supervisors', data),
+  registerSupervisor: (data) => api.post('/admin/supervisors', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getSupervisors: () => api.get('/admin/supervisors'),
   updateSupervisor: (supervisorId, data) => api.put(`/admin/supervisors/${supervisorId}`, data),
-  deleteSupervisor: (supervisorId) => api.delete(`/admin/supervisors/${supervisorId}`)
-  ,getAttendanceByDate: (params) => api.get('/admin/attendance', { params })
+  deleteSupervisor: (supervisorId) => api.delete(`/admin/supervisors/${supervisorId}`),
+  getAttendanceByDate: (params) => api.get('/admin/attendance', { params }),
+  getStaffDetails: () => api.get('/admin/staff-details')
 };
 
 export const assignmentAPI = {
@@ -74,7 +75,7 @@ export const companyAPI = {
   getEmployeeDetails: (employeeId) => api.get(`/company/employees/${employeeId}`),
   getAssignments: (params) => api.get('/company/assignments', { params }),
   getSupervisors: () => api.get('/company/supervisors'),
-  registerSupervisor: (data) => api.post('/company/supervisors', data),
+  registerSupervisor: (data) => api.post('/company/supervisors', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getAttendance: (params) => api.get('/company/attendance', { params })
 };
 

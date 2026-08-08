@@ -571,12 +571,34 @@ function EmployeeProfile({ user, onLogout }) {
                 <span className="profile-value">{profile.address || 'Not set'}</span>
               </div>
               <div className="profile-field">
+                <span className="profile-label">Company</span>
+                <span className="profile-value">{profile.companyId?.name || 'Not assigned'}</span>
+              </div>
+              <div className="profile-field">
                 <span className="profile-label">Aadhaar</span>
-                <span className="profile-value">{profile.aadhaar || 'Not set'}</span>
+                <span className="profile-value">
+                  {profile.aadhaar || 'Not set'}
+                  {profile.aadhaarPhoto && (
+                    <div className="mt-2">
+                      <a href={profile.aadhaarPhoto} target="_blank" rel="noopener noreferrer">
+                        <img src={profile.aadhaarPhoto} alt="Aadhaar" className="w-32 h-20 object-cover rounded shadow" />
+                      </a>
+                    </div>
+                  )}
+                </span>
               </div>
               <div className="profile-field">
                 <span className="profile-label">PAN</span>
-                <span className="profile-value">{profile.pan || 'Not set'}</span>
+                <span className="profile-value">
+                  {profile.pan || 'Not set'}
+                  {profile.panPhoto && (
+                    <div className="mt-2">
+                      <a href={profile.panPhoto} target="_blank" rel="noopener noreferrer">
+                        <img src={profile.panPhoto} alt="PAN" className="w-32 h-20 object-cover rounded shadow" />
+                      </a>
+                    </div>
+                  )}
+                </span>
               </div>
               <div className="profile-field">
                 <span className="profile-label">Company Code</span>

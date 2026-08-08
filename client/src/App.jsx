@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminProfile from './pages/admin/Profile';
+import AdminStaff from './pages/admin/Staff';
 import CompanyDashboard from './pages/company/Dashboard';
 import CompanyProfile from './pages/company/Profile';
 import SupervisorDashboard from './pages/supervisor/Dashboard';
@@ -67,6 +68,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/staff"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminStaff user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           }
         />

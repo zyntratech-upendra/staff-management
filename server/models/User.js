@@ -40,7 +40,13 @@ const userSchema = new mongoose.Schema({
   aadhaar: {
     type: String
   },
+  aadhaarPhoto: {
+    type: String
+  },
   pan: {
+    type: String
+  },
+  panPhoto: {
     type: String
   },
   bankDetails: {

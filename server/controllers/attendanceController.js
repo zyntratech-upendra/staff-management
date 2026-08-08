@@ -119,22 +119,18 @@ exports.getEmployeesForAttendance = async (req, res) => {
     const existing = await Attendance.find({ companyId, date: target }).select('employeeId');
     const attendedIds = existing.map(a => a.employeeId.toString());
 
-    const now = new Date();
-    const assignments = await Assignment.find({
+    const companyEmployees = await User.find({
       companyId,
-      status: 'active',
-      startDate: { $lte: now },
-      endDate: { $gte: now }
-    }).populate('employeeId', 'name email phone');
+      role: 'employee'
+    }).select('name email phone');
 
-    const employees = assignments
-      .filter(assignment => !attendedIds.includes(assignment.employeeId._id.toString()))
-      .map(assignment => ({
-        _id: assignment.employeeId._id,
-        name: assignment.employeeId.name,
-        email: assignment.employeeId.email,
-        phone: assignment.employeeId.phone,
-        assignmentId: assignment._id
+    const employees = companyEmployees
+      .filter(employee => !attendedIds.includes(employee._id.toString()))
+      .map(employee => ({
+        _id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone
       }));
 
     res.json(employees);

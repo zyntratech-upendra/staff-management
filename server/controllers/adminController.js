@@ -150,6 +150,18 @@ exports.registerEmployee = async (req, res) => {
       salaryStructure
     } = req.body;
 
+    let aadhaarPhoto = '';
+    let panPhoto = '';
+
+    if (req.files) {
+      if (req.files.aadhaarPhoto && req.files.aadhaarPhoto[0]) {
+        aadhaarPhoto = req.files.aadhaarPhoto[0].path;
+      }
+      if (req.files.panPhoto && req.files.panPhoto[0]) {
+        panPhoto = req.files.panPhoto[0].path;
+      }
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
@@ -163,7 +175,9 @@ exports.registerEmployee = async (req, res) => {
       phone,
       address,
       aadhaar,
+      aadhaarPhoto,
       pan,
+      panPhoto,
       bankDetails,
       salaryStructure
     });
@@ -229,6 +243,18 @@ exports.registerSupervisor = async (req, res) => {
   try {
     const { name, email, password, phone, address, companyId } = req.body;
 
+    let aadhaarPhoto = '';
+    let panPhoto = '';
+
+    if (req.files) {
+      if (req.files.aadhaarPhoto && req.files.aadhaarPhoto[0]) {
+        aadhaarPhoto = req.files.aadhaarPhoto[0].path;
+      }
+      if (req.files.panPhoto && req.files.panPhoto[0]) {
+        panPhoto = req.files.panPhoto[0].path;
+      }
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
@@ -248,6 +274,8 @@ exports.registerSupervisor = async (req, res) => {
       password,
       phone,
       address,
+      aadhaarPhoto,
+      panPhoto,
       companyId: companyId || undefined
     });
 
@@ -376,6 +404,38 @@ exports.getAttendanceByDate = async (req, res) => {
     res.json(present);
   } catch (error) {
     console.error('Get admin attendance by date error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAllStaffDetails = async (req, res) => {
+  try {
+    const Assignment = require('../models/Assignment');
+    const Attendance = require('../models/Attendance');
+    const Salary = require('../models/Salary');
+
+    const staff = await User.find({
+      role: { $in: ['employee', 'supervisor'] }
+    }).populate('companyId', 'name').select('-password').lean();
+
+    const staffIds = staff.map(s => s._id);
+
+    const [assignments, attendance, salaries] = await Promise.all([
+      Assignment.find({ employeeId: { $in: staffIds } }).populate('companyId', 'name').lean(),
+      Attendance.find({ employeeId: { $in: staffIds } }).lean(),
+      Salary.find({ employeeId: { $in: staffIds } }).populate('companyId', 'name').lean()
+    ]);
+
+    const staffWithDetails = staff.map(user => {
+      user.assignments = assignments.filter(a => a.employeeId.toString() === user._id.toString());
+      user.attendance = attendance.filter(a => a.employeeId.toString() === user._id.toString());
+      user.salaries = salaries.filter(s => s.employeeId.toString() === user._id.toString());
+      return user;
+    });
+
+    res.json(staffWithDetails);
+  } catch (error) {
+    console.error('Get all staff details error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
